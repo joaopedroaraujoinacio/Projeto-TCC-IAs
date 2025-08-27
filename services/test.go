@@ -21,3 +21,7 @@ func (s *TestService) GetAllTests() ([]models.Test, error) {
 func CreateUser(db *sql.DB, user *models.User) error {
 	return repositories.CreateUser(db, user)
 }
+
+func GetUserByID(db *sql.DB, id int) (*models.User, error) {
+	return repositories.GetUserByID(db, id)
+}
