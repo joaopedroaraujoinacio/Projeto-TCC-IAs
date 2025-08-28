@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: ankane/pgvector:v0.5.0
+    environment:
+      POSTGRES_DB: golang_crud
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:password123@postgres:5432/golang_crud?sslmode=disable
+      # - OLLAMA_URL=http://localhost:11434 # Primary URL
+      - GIN_MODE=debug
+      - LOG_LEVEL=debug
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
