@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15
+    image: ankane/pgvector:v0.5.0
     environment:
       POSTGRES_DB: golang_crud
       POSTGRES_USER: postgres
@@ -10,60 +10,39 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: >
-      bash -c "
-        apt-get update && 
-        apt-get install -y postgresql-15-pgvector && 
-        docker-entrypoint.sh postgres
-      "
     networks:
       - app_network
-      
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_HOST=0.0.0.0
-    networks:
-      - app_network
-
-  ollama-setup:
-    image: ollama/ollama
-    depends_on:
-      - ollama
-    volumes:
-      - ollama_data:/root/.ollama
-    command: >
-      sh -c "
-        sleep 20 &&
-        echo 'Pulling nomic-embed-text model...' &&
-        ollama pull nomic-embed-text &&
-        echo 'Model downloaded successfully!'
-      "
-    restart: "no"
-    networks:
-      - app_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   app:
     build: .
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - ollama
+      postgres:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:password123@postgres:5432/golang_crud?sslmode=disable
-      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_URL=http://localhost:11434 # Primary URL
+      - GIN_MODE=debug
+      - LOG_LEVEL=debug
     networks:
       - app_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/hello"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
 volumes:
   postgres_data:
-  ollama_data:
 
 networks:
   app_network:
