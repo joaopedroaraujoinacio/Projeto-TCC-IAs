@@ -14,10 +14,6 @@ services:
       - app_network
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
   app:
     build: .
@@ -28,7 +24,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:password123@postgres:5432/golang_crud?sslmode=disable
-      - OLLAMA_URL=http://localhost:11434 # Primary URL
+      # - OLLAMA_URL=http://localhost:11434 # Primary URL
       - GIN_MODE=debug
       - LOG_LEVEL=debug
     networks:

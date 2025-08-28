@@ -19,11 +19,9 @@ func CreateDocument(db *sql.DB) gin.HandlerFunc {
     return func(c *gin.Context) {
         var doc models.Document
 
-        // Debug: Print raw body
         body, _ := c.GetRawData()
         fmt.Printf("Raw body: %s\n", string(body))
 
-        // Reset body for binding
         c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
         if err := c.ShouldBindJSON(&doc); err != nil {
@@ -46,31 +44,11 @@ func CreateDocument(db *sql.DB) gin.HandlerFunc {
     }
 }
 
-// func CreateDocument(db * sql.DB) gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		var doc models.Document
-//
-// 		if err := c.ShouldBind(&doc); err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-//
-// 			}
-//
-// 		if err := services.CreateDocument(db, &doc); err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create document"})
-// 			return
-// 		}
-// 		c.JSON(http.StatusCreated, gin.H{
-// 			"message": "Document created successfully",
-// 			"document": doc,
-//
-// 		})
-// 	}
-// }
 
 type DocumentHandlers struct {
 	DB *sql.DB
 }
+
 
 func (h *DocumentHandlers) SearchDocuments(c *gin.Context) {
 	query := c.Query("q")
@@ -101,7 +79,6 @@ func (h *DocumentHandlers) SearchDocuments(c *gin.Context) {
 		"count": len(documents),
 	})
 }
-
 
 
 func (h *DocumentHandlers) GetAllDocuments(c *gin.Context) {

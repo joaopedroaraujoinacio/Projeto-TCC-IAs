@@ -26,7 +26,6 @@ func CreateDocument(db *sql.DB, doc *models.Document) error {
 	return err
 }
 
-// Helper function to convert []float32 to pgvector string format
 func vectorToString(embedding []float32) string {
 	strValues := make([]string, len(embedding))
 	for i, v := range embedding {
@@ -35,20 +34,6 @@ func vectorToString(embedding []float32) string {
 	return "[" + strings.Join(strValues, ",") + "]"
 }
 
-
-
-// func CreateDocument(db *sql.DB, doc *models.Document) error {
-// 	query := `INSERT INTO documents (content, media_type, file_name, embedding) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
-// 	err := db.QueryRow(query, doc.Content, doc.MediaType, doc.FileName, pq.Array(doc.Embedding)).Scan(&doc.ID, &doc.CreatedAt)
-// 	return err
-// }
-
-
-// func CreateDocument(db *sql.DB, doc *models.Document) error {
-//   query := `INSERT INTO documents (content, embedding) VALUES ($1, $2) RETURNING id, created_at`
-// 	err := db.QueryRow(query, doc.Content, pq.Array(doc.Embedding)).Scan(&doc.ID, &doc.CreatedAt)
-// 	return err
-// }
 
 func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]models.Document, error) {
 	embeddingStr := vectorToString(queryEmbedding)

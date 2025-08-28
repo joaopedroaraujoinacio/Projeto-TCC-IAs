@@ -12,7 +12,7 @@ import (
 func CreateDocument(db *sql.DB, doc *models.Document) error {
 	embedding, err := GenerateEmbedding(doc.Content)
 	if err != nil {
-		return fmt.Errorf("Failed to generate embedding: %w", err)
+		return fmt.Errorf("failed to generate embedding: %w", err)
 	}
 
 	doc.Embedding = embedding
@@ -23,7 +23,7 @@ func SearchDocuments(db *sql.DB, query string, limit int) ([]models.Document, er
 	queryEmbedding, err := GenerateEmbedding(query)
 	if err != nil {
 		log.Printf("Failed to generate embedding for query: %v", err)
-		return nil, fmt.Errorf("Failed to generate embedding for query: %w", err)
+		return nil, fmt.Errorf("failed to generate embedding for query: %w", err)
 	}
 
 	log.Printf("Generated embedding for query: '%s' (lenght: %d)", query, len(queryEmbedding))

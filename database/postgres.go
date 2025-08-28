@@ -5,6 +5,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+
 func Connect(databaseURL string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
@@ -18,3 +19,4 @@ func Connect(databaseURL string) (*sql.DB, error) {
 	return db, nil
 
 }
+

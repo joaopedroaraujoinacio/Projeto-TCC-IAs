@@ -4,10 +4,12 @@ import (
 	"os"
 )
 
+
 type Config struct {
 	DatabaseURL string
 	Port 				string
 }
+
 
 func Load() *Config {
 	return &Config{
@@ -16,9 +18,11 @@ func Load() *Config {
 	}
 }
 
+
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
 	return defaultValue
 }
+
