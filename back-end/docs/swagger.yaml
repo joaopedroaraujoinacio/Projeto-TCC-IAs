@@ -1,0 +1,26 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is your API description
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Your API Title
+  version: "1.0"
+paths:
+  /documents:
+    post:
+      consumes:
+      - application/json
+      responses: {}
+      summary: Create document for vectorial database
+  /documents/search:
+    get:
+      responses: {}
+      summary: Find a document on the database with semantic search
+swagger: "2.0"

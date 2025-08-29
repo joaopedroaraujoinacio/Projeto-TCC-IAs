@@ -8,7 +8,7 @@ import (
 )
 
 
-func Setup(r *gin.Engine, db *sql.DB) {
+func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	documentHandlers := &handlers.DocumentHandlers{DB: db}
 

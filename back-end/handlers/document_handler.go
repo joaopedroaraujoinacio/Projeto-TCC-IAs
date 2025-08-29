@@ -15,6 +15,11 @@ import (
 )
 
 
+
+// CreateDocument godoc
+// @Summary			Create document for vectorial database
+// @Accept			json
+// @Router 			/documents [post]
 func CreateDocument(db *sql.DB) gin.HandlerFunc {
     return func(c *gin.Context) {
         var doc models.Document
@@ -50,6 +55,9 @@ type DocumentHandlers struct {
 }
 
 
+// SearchDocument godoc
+// @Summary Find a document on the database with semantic search
+// @Router /documents/search [get]
 func (h *DocumentHandlers) SearchDocuments(c *gin.Context) {
 	query := c.Query("q")
 	if query == "" {
