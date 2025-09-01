@@ -32,8 +32,9 @@ func GenerateEmbedding(text string) ([]float32, error) {
 
 	log.Printf("Sending to Ollama: %s", string(jsonData))
 
-	resp, err := http.Post("http://localhost:11434/api/embeddings", "application/json", bytes.NewBuffer(jsonData))
+	// resp, err := http.Post("http://localhost:11434/api/embeddings", "application/json", bytes.NewBuffer(jsonData))
 	// resp, err := http.Post("http://host.docker.internal:11434/api/embeddings", "application/josn", bytes.NewBuffer(jsonData))
+	resp, err := http.Post("http://ollama:11434/api/embeddings", "application/json", bytes.NewBuffer(jsonData))
 
 	if err != nil {
 		return nil, err

@@ -1,0 +1,17 @@
+FROM ollama/ollama
+
+ENV OLLAMA_HOST=0.0.0.0:11434
+
+RUN echo '#!/bin/sh\n\
+set -e\n\
+echo "Starting Ollama..."\n\
+ollama serve &\n\
+OLLAMA_PID=$!\n\
+echo "Waiting for Ollama to start..."\n\
+sleep 15\n\
+echo "Pulling nomic-embed-text model..."\n\
+ollama pull nomic-embed-text\n\
+echo "Model installed!"\n\
+wait $OLLAMA_PID' > /start.sh && chmod +x /start.sh
+
+ENTRYPOINT ["/start.sh"]

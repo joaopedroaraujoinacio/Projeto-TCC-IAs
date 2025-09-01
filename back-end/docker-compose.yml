@@ -22,18 +22,43 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # ollama:
+      #   condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:password123@postgres:5432/golang_crud?sslmode=disable
-      # - OLLAMA_URL=http://localhost:11434 # Primary URL
+      - OLLAMA_URL=http://ollama:11434
       - GIN_MODE=debug
       - LOG_LEVEL=debug
     networks:
       - app_network
     restart: unless-stopped
 
+  # ollama:
+  #     image: ollama/ollama
+  #     ports:
+  #       - "11434:11434"
+  #     environment:
+  #       - OLLAMA_HOST=0.0.0.0:11434
+  #     networks:
+  #       - app_network
+  #     restart: unless-stopped
+  #     volumes:
+  #       - ollama_data:/root/.ollama
+  ollama:
+    build:
+      context: .
+      dockerfile: Dockerfile.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app_network
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+
 volumes:
   postgres_data:
-
+  ollama_data:
 networks:
   app_network:
     driver: bridge
