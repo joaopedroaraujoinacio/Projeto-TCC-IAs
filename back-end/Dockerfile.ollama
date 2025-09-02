@@ -9,9 +9,11 @@ ollama serve &\n\
 OLLAMA_PID=$!\n\
 echo "Waiting for Ollama to start..."\n\
 sleep 15\n\
+echo "Pulling mxbai-embed-large model..."\n\
+ollama pull mxbai-embed-large\n\
 echo "Pulling nomic-embed-text model..."\n\
 ollama pull nomic-embed-text\n\
-echo "Model installed!"\n\
+echo "Models installed!"\n\
 wait $OLLAMA_PID' > /start.sh && chmod +x /start.sh
 
 ENTRYPOINT ["/start.sh"]

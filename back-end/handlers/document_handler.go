@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"bytes"
-	"database/sql"
-	"fmt"
-	"golang_crud/models"
-	"golang_crud/services"
 	"io"
 	"log"
-	"net/http"
+	"fmt"
+	"bytes"
 	"strconv"
-
+	"net/http"
+	"database/sql"
+	"golang_crud/models"
+	"golang_crud/services"
 	"github.com/gin-gonic/gin"
 )
 

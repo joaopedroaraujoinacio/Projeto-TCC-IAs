@@ -1,17 +1,15 @@
 package repositories
 
 import (
-	"database/sql"
-	"fmt"
-	"golang_crud/models"
 	"log"
-	"strconv"
-	"strings"
+	"database/sql"
+	"golang_crud/models"
+	"golang_crud/utils"
 )
 
 
 func CreateDocument(db *sql.DB, doc *models.Document) error {
-	embeddingStr := vectorToString(doc.Embedding)
+	embeddingStr := utils.VectorToString(doc.Embedding)
 	
 	query := `INSERT INTO documents (content, media_type, file_name, embedding) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
 	
@@ -26,17 +24,9 @@ func CreateDocument(db *sql.DB, doc *models.Document) error {
 	return err
 }
 
-func vectorToString(embedding []float32) string {
-	strValues := make([]string, len(embedding))
-	for i, v := range embedding {
-		strValues[i] = fmt.Sprintf("%f", v)
-	}
-	return "[" + strings.Join(strValues, ",") + "]"
-}
-
 
 func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]models.Document, error) {
-	embeddingStr := vectorToString(queryEmbedding)
+	embeddingStr := utils.VectorToString(queryEmbedding)
 
 	query := `
 		SELECT id, content, media_type, file_name, embedding, created_at,
@@ -75,7 +65,7 @@ func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]
 			doc.FileName = &fileName.String
 		}
 		
-		doc.Embedding = parseVectorString(embeddingStr)
+		doc.Embedding = utils.ParseVectorString(embeddingStr)
 
 		log.Printf("Found document ID %d with similarity: %.4f", doc.ID, similarity)
 		documents = append(documents, doc)
@@ -84,20 +74,3 @@ func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]
 	return documents, nil
 }
 
-func parseVectorString(vectorSTR string) []float32 {
-	vectorSTR = strings.Trim(vectorSTR, "[]")
-	if vectorSTR == "" {
-		return []float32{}
-	}
-
-	parts := strings.Split(vectorSTR, ",")
-	embedding := make([]float32, len(parts))
-	
-	for i, part := range  parts {
-		if val, err := strconv.ParseFloat(strings.TrimSpace(part), 32); err == nil {
-			embedding[i] = float32(val)
-		}
-	}
-
-	return embedding
-}

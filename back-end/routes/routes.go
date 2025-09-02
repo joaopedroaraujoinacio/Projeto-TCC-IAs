@@ -18,6 +18,8 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 		api.GET("/documents/search", documentHandlers.SearchDocuments)
 		api.GET("/documents", documentHandlers.GetAllDocuments)
 
+		api.POST("/post_code", handlers.CreateCodeDocument(db))
+
 		api.GET("/hello", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Hello world",
