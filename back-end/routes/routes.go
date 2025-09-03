@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"net/http"
 	"database/sql"
+	"golang_crud/utils"
 	"golang_crud/handlers"
 	"github.com/gin-gonic/gin"
 )
@@ -20,11 +20,12 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 		api.POST("/post_code", handlers.CreateCodeDocument(db))
 
-		api.GET("/hello", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Hello world",
-			})
-		})
+		// api.GET("/hello", func(c *gin.Context) {
+		// 	c.JSON(http.StatusOK, gin.H{
+		// 		"message": "Hello world",
+		// 	})
+		// })
+		api.GET("/hello", utils.SwaggerRoutes)
 	}
 }
 
