@@ -44,8 +44,11 @@ func CreateCodeDocument(db *sql.DB) gin.HandlerFunc{
 }
 
 
+type CodeDocumentHandlers struct {
+	DB *sql.DB
+}
 
-func (h *DocumentHandlers) SearchCodeDocuments(c *gin.Context) {
+func (h *CodeDocumentHandlers) SearchCodeDocuments(c *gin.Context) {
 	query := c.Query("q")
 	if query == "" {
 		c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})

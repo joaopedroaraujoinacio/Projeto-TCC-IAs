@@ -11,6 +11,7 @@ import (
 func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	documentHandlers := &handlers.DocumentHandlers{DB: db}
+	codeHandlers := &handlers.CodeDocumentHandlers{DB: db}
 
 	api := r.Group("/api")
 	{
@@ -19,12 +20,8 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 		api.GET("/documents", documentHandlers.GetAllDocuments)
 
 		api.POST("/post_code", handlers.CreateCodeDocument(db))
+		api.GET("/get_code", codeHandlers.SearchCodeDocuments)
 
-		// api.GET("/hello", func(c *gin.Context) {
-		// 	c.JSON(http.StatusOK, gin.H{
-		// 		"message": "Hello world",
-		// 	})
-		// })
 		api.GET("/hello", utils.SwaggerRoutes)
 	}
 }
