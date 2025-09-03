@@ -3,7 +3,9 @@ package handlers
 import (
 	"io"
 	"fmt"
+	"log"
 	"bytes"
+	"strconv"
 	"net/http"
 	"database/sql"
 	"golang_crud/models"
@@ -39,5 +41,37 @@ func CreateCodeDocument(db *sql.DB) gin.HandlerFunc{
 			"code": code,
 		})	
 	}
+}
+
+
+
+func (h *DocumentHandlers) SearchCodeDocuments(c *gin.Context) {
+	query := c.Query("q")
+	if query == "" {
+		c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})
+		return
+	}
+
+	limitStr := c.DefaultQuery("limit", "5")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 5
+	}
+
+	log.Printf("Searching for: %s (limit: %d)", query, limit)
+
+	codes, err := services.SearchCodeDocuments(h.DB, query, limit)
+	if err != nil {
+		log.Printf("Search error: %v", err)
+		c.JSON(500, gin.H{"error": "Failed to search documents"})
+		return
+	}
+
+	log.Printf("Found %d similar documents", len(codes))
+	c.JSON(200, gin.H{
+		"query": query,
+		"results": codes,
+		"count": len(codes),
+	})
 }
 
