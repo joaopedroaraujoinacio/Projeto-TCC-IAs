@@ -22,7 +22,7 @@ func CreateCodeDocument(db *sql.DB, code *models.Codes) error {
 
 
 func SearchCodeDocuments(db *sql.DB, query string, limit int) ([]models.Codes, error) {
-	queryEmbedding, err := utils.GenerateEmbedding(query)
+	queryEmbedding, err := utils.GenerateCodeEmbedding(query)
 	if err != nil {
 		log.Printf("Failed to generate embedding for query: %v", err)
 		return nil, fmt.Errorf("failed to generate embedding for query: %w", err)

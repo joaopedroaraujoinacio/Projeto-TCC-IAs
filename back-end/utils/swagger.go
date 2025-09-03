@@ -15,5 +15,8 @@ func SwaggerRoutes(c *gin.Context) {
 			"POST.": "http://localhost:8080/api/documents/search?q= &limit=3 --> Procura no banco por similaridade. Colocar busca depois de q= 'sua buscai",
 			"POST..": "http://localhost:8080/api/documents --> Envia texto para banco de dados", 
 			"message":	"Hello world",
+
+			"GETT.": "http://localhost:8080/api/get_code?q= &limit=3 --> Procura no banco por similaridade. Colocar busca depois de q= 'sua buscai",
+			//fix
 	})
 }
