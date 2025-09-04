@@ -21,6 +21,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 		api.POST("/post_code", handlers.CreateCodeDocument(db))
 		api.GET("/get_code", codeHandlers.SearchCodeDocuments)
+		api.GET("/get_all_code", codeHandlers.GetAllCodeDocuments)
 
 		api.GET("/hello", utils.SwaggerRoutes)
 	}

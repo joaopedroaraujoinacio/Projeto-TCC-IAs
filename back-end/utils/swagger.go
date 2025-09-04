@@ -18,5 +18,6 @@ func SwaggerRoutes(c *gin.Context) {
 
 			"GETT.": "http://localhost:8080/api/get_code?q= &limit=3 --> Procura no banco por similaridade. Colocar busca depois de q= 'sua buscai",
 			//fix
+			"GETT_ALL":	"http://localhost:8080/get_all_code",
 	})
 }

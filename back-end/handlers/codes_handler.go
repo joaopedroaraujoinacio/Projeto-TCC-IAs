@@ -78,3 +78,24 @@ func (h *CodeDocumentHandlers) SearchCodeDocuments(c *gin.Context) {
 	})
 }
 
+
+func (h *CodeDocumentHandlers) GetAllCodeDocuments(c *gin.Context) {
+	query := `SELECT id, content, programming_language, file_name, created_at FROM codes ORDER BY id DESC LIMIT 10`
+	
+	rows, err := h.DB.Query(query)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Database error"})
+		return
+	}
+	defer rows.Close()
+	
+	var codes []models.Codes
+	for rows.Next() {
+		var code models.Codes
+		rows.Scan(&code.ID, &code.Content, &code.ProgramingLanguage, &code.FileName, &code.CreatedAt)
+		codes = append(codes, code)
+	}
+	
+	c.JSON(200, gin.H{"codes": codes, "count": len(codes)})
+}
+
