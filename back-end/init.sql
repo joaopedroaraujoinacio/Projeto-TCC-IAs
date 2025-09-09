@@ -1,20 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
-CREATE TABLE IF NOT EXISTS image_embeddings(
-    id SERIAL PRIMARY KEY,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    description TEXT,
-    embedding vector(4096),
-    metadata JSONB,
-    created_at TIMESTAMP DEFAULT TIMESTAMP
-),
-
-CREATE INDEX IF NOT EXISTS image_embedding_idx 
-ON image_embeddings USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 1);
-
-
 CREATE TABLE IF NOT EXISTS documents (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
