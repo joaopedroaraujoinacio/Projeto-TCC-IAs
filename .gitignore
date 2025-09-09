@@ -1,0 +1,5 @@
+# SonarQube files
+.sonar/
+.sonarqube/
+.scannerwork/
+sonar-project.properties
