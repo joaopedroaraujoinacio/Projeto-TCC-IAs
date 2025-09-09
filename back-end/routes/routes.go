@@ -2,8 +2,11 @@ package routes
 
 import (
 	"database/sql"
-	"golang_crud/utils"
 	"golang_crud/handlers"
+	"golang_crud/repositories"
+	"golang_crud/services"
+	"golang_crud/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +15,10 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	documentHandlers := &handlers.DocumentHandlers{DB: db}
 	codeHandlers := &handlers.CodeDocumentHandlers{DB: db}
+
+	chatRepo := repositories.NewChatRepository("http://ollama:11434") // Adjust URL if needed
+	chatService := services.NewChatService(chatRepo)
+	chatHandler := handlers.NewChatHandler(chatService)
 
 	api := r.Group("/api")
 	{
@@ -23,6 +30,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 		api.GET("/get_code", codeHandlers.SearchCodeDocuments)
 		api.GET("/get_all_code", codeHandlers.GetAllCodeDocuments)
 
+		api.POST("/chat", chatHandler.Chat)
 		api.GET("/hello", utils.SwaggerRoutes)
 	}
 }
