@@ -2,5 +2,5 @@ projectKey=rag-project-go
 serverUrl=http://localhost:9000
 serverVersion=25.9.0.112764
 dashboardUrl=http://localhost:9000/dashboard?id=rag-project-go
-ceTaskId=d364368f-5726-4618-8ad0-58ad1dc09a01
-ceTaskUrl=http://localhost:9000/api/ce/task?id=d364368f-5726-4618-8ad0-58ad1dc09a01
+ceTaskId=7b003cf8-5912-4f27-837d-302b3cba8794
+ceTaskUrl=http://localhost:9000/api/ce/task?id=7b003cf8-5912-4f27-837d-302b3cba8794
