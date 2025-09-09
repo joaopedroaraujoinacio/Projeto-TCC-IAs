@@ -21,3 +21,13 @@ func SwaggerRoutes(c *gin.Context) {
 			"GETT_ALL":	"http://localhost:8080/get_all_code",
 	})
 }
+
+// func SwaggerRoutes(c *gin.Context) {
+// 	c.JSON(http.StatusOK, gin.H{"routes":map[string]string{
+// 		"GET /api/documents":"Busca todos os dados do banco",
+// 		"POST /api/post_code":"Envia texto para banco(Recomendado para o envio de codigo)",
+// 		"POST /api/documents/search":"Procura no banco por similaridade. q=busca&limit=3",
+// 		"POST /api/documents":"Envia texto para banco de dados",
+// 		"GET /api/get_code":"Procura código por similaridade. q=busca&limit=3",
+// 		"GET /get_all_code":"Busca todos os códigos"},"message":"Hello world"})
+// }

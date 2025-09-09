@@ -34,6 +34,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 CREATE TABLE IF NOT EXISTS codes (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
