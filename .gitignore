@@ -3,3 +3,15 @@
 .sonarqube/
 .scannerwork/
 sonar-project.properties
+
+ssl/
+*.crt
+*.key
+
+# Docker volumes
+postgres_data/
+ollama_data/
+
+# Logs
+*.log
+logs/

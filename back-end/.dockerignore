@@ -1,3 +1,4 @@
+#Git files
 .git
 .gitignore
 
@@ -6,3 +7,16 @@
 .sonarqube/
 .scannerwork/
 sonar-project.properties
+
+# SSL certificates
+ssl/
+*.crt
+*.key
+
+# Documentation
+README.md
+*.md
+
+# Logs
+*.log
+
