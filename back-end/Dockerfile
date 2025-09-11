@@ -11,16 +11,32 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata curl
+RUN apk --no-cache add ca-certificates tzdata curl openssl
 
 RUN adduser -D -s /bin/sh appuser
+
+RUN mkdir -p /app/certs && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /app/certs/server.key \
+    -out /app/certs/server.crt \
+    -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=localhost"
 
 WORKDIR /app
 
 COPY --from=builder /app/main .
+RUN mkdir -p /app/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /app/ssl/server.key \
+    -out /app/ssl/server.crt \
+    -subj "/C=US/ST=State/L=City/O=MyOrg/OU=IT/CN=localhost" && \
+    chmod 600 /app/ssl/server.key && \
+    chmod 644 /app/ssl/server.crt
 
-RUN chown appuser:appuser /app/main
-RUN chmod +x /app/main
+RUN chown -R appuser:appuser /app && \
+    chmod +x /app/main
+
+# RUN chown appuser:appuser /app/main
+# RUN chmod +x /app/main
 
 USER appuser
 
