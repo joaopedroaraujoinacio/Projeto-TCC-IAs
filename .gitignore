@@ -6,5 +6,13 @@ sonar-project.properties
 
 #ssl keys
 ssl/
-server.crt
-server.key
+*.crt
+*.key
+
+# Docker volumes
+postgres_data/
+ollama_data/
+
+# Logs
+*.log
+logs/
