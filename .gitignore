@@ -3,3 +3,8 @@
 .sonarqube/
 .scannerwork/
 sonar-project.properties
+
+#ssl keys
+ssl/
+server.crt
+server.key
