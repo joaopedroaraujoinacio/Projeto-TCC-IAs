@@ -2,11 +2,10 @@ package routes
 
 import (
 	"database/sql"
-	"golang_crud/handlers"
-	"golang_crud/repositories"
-	"golang_crud/services"
 	"golang_crud/utils"
-
+	"golang_crud/handlers"
+	"golang_crud/services"
+	"golang_crud/repositories"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,7 +15,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	documentHandlers := &handlers.DocumentHandlers{DB: db}
 	codeHandlers := &handlers.CodeDocumentHandlers{DB: db}
 
-	chatRepo := repositories.NewChatRepository("http://ollama:11434") // Adjust URL if needed
+	chatRepo := repositories.NewChatRepository("http://ollama:11434")
 	chatService := services.NewChatService(chatRepo)
 	chatHandler := handlers.NewChatHandler(chatService)
 

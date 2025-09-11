@@ -3,13 +3,10 @@ package main
 import (
 	"os"
 	"log"
-	// _"golang_crud/docs"
 	"golang_crud/config"
 	"golang_crud/routes"
 	"golang_crud/database"
 	"github.com/gin-gonic/gin"
-	// swaggerFiles "github.com/swaggo/files"
-	// ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -33,7 +30,6 @@ func main() {
 		})
 	})
 
-	// routes.Setup(router, db)
 	routes.SetupRoutes(r, db)
 
 	port := os.Getenv("PORT")
@@ -41,9 +37,7 @@ func main() {
 		port = "8080"
 	}
 
-	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	log.Printf("Server starting on port %s", port)
 	r.Run("0.0.0.0:" + port)
-
 }
+
