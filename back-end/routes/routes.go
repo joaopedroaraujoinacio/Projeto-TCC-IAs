@@ -19,6 +19,10 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	chatService := services.NewChatService(chatRepo)
 	chatHandler := handlers.NewChatHandler(chatService)
 
+	smartSearchRepo := repositories.NewSmartSearchRepository()
+	smartSearchService := services.NewSmartSearchService(smartSearchRepo, chatRepo)
+	smartSearchHandler := handlers.NewSmartSearchHandler(smartSearchService)
+
 	api := r.Group("/api")
 	{
 		api.POST("/documents", handlers.CreateDocument(db))
@@ -31,6 +35,10 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 		api.POST("/chat", chatHandler.Chat)
 		api.GET("/hello", utils.SwaggerRoutes)
+
+		api.POST("/smart-search", smartSearchHandler.SmartSearch)
+		api.GET("/smart-search/health", smartSearchHandler.SmartSearchHealth)
+
 	}
 }
 
