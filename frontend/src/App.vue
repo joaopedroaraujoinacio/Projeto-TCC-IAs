@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <h1>🤖 RAG API Test</h1>
+    <h1>RAG API Test</h1>
     
     <div class="test-section">
       <h2>Hello Route Test</h2>
@@ -9,12 +9,12 @@
       </button>
       
       <div v-if="error" class="error">
-        <h3>❌ Error:</h3>
+        <h3>Error:</h3>
         <pre>{{ error }}</pre>
       </div>
       
       <div v-if="response" class="response">
-        <h3>✅ Response from /api/hello:</h3>
+        <h3>Response from /api/hello:</h3>
         <pre>{{ JSON.stringify(response, null, 2) }}</pre>
       </div>
     </div>
