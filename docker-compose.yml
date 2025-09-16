@@ -26,14 +26,16 @@ services:
       # - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - .backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app_network
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
 
   app:
-    build: .
+    build: 
+      context: ./backend/
+      dockerfile: Dockerfile
     # ports:
     #   - "8080:8080"
     volumes:                         
@@ -50,9 +52,17 @@ services:
       - app_network
     restart: unless-stopped
 
+  front:
+    build:
+      context: ./frontend/
+      dockerfile: Dockerfile
+    networks:
+      - app_network
+    restart: unless-stopped
+  
   ollama:
     build:
-      context: .
+      context: ./backend/
       dockerfile: Dockerfile.ollama
     # ports:
     #   - "11434:11434"
