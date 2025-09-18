@@ -11,7 +11,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://localhost/api/hello',
+        target: 'https://localhost/api/chat',
         changeOrigin: true
       }
     }
