@@ -29,7 +29,6 @@ func NewSmartSearchRepository() SmartSearchRepository {
 }
 
 func (r *smartSearchRepository) SearchDuckDuckGo(query string, maxSources int) ([]models.SearchSource, error) {
-	// Debug logging
 	fmt.Printf("DEBUG: Received query: '%s', maxSources: %d\n", query, maxSources)
 	
 	if maxSources <= 0 {
@@ -51,7 +50,8 @@ func (r *smartSearchRepository) SearchDuckDuckGo(query string, maxSources int) (
 	var err error
 	
 	// Retry logic for 202 responses
-	for i := 0; i < 3; i++ {
+	for i := range []int{0, 1, 2} {  
+	// for i := 0; i < 3; i++ {
 		resp, err = r.client.Get(searchURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to search DuckDuckGo: %w", err)
@@ -80,6 +80,17 @@ func (r *smartSearchRepository) SearchDuckDuckGo(query string, maxSources int) (
 	if err := json.Unmarshal(body, &ddgResp); err != nil {
 		return nil, fmt.Errorf("failed to parse DuckDuckGo response: %w", err)
 	}
+
+	sources	:= r.buildSources(ddgResp, query, encodedQuery, maxSources)
+
+	return sources, nil
+}
+
+func (r *smartSearchRepository) buildSources(
+	ddgResp models.DuckDuckGoResponse,
+	query, encodedQuery string, 
+	maxSources int,
+) []models.SearchSource {
 
 	var sources []models.SearchSource
 	count := 0
@@ -113,7 +124,6 @@ func (r *smartSearchRepository) SearchDuckDuckGo(query string, maxSources int) (
 		}
 	}
 
-	// If no results from Instant Answer API, create a fallback source
 	if len(sources) == 0 {
 		fmt.Println("DEBUG: No instant answers found, creating fallback source")
 		sources = append(sources, models.SearchSource{
@@ -125,7 +135,7 @@ func (r *smartSearchRepository) SearchDuckDuckGo(query string, maxSources int) (
 	}
 
 	fmt.Printf("DEBUG: Returning %d sources\n", len(sources))
-	return sources, nil
+	return sources
 }
 
 func (r *smartSearchRepository) ScrapeContent(url string) (string, error) {
