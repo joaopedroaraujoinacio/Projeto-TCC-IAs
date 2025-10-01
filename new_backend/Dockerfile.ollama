@@ -1,0 +1,17 @@
+FROM ollama/ollama
+
+ENV OLLAMA_HOST=0.0.0.0:11434
+
+RUN echo '#!/bin/sh\n\
+set -e\n\
+echo "Starting Ollama..."\n\
+ollama serve &\n\
+OLLAMA_PID=$!\n\
+echo "Waiting for Ollama to start..."\n\
+sleep 15\n\
+echo "Pulling llama3.2:3b model..."\n\
+ollama pull llama3.2:3b\n\
+echo "Models installed!"\n\
+wait $OLLAMA_PID' > /start.sh && chmod +x /start.sh
+
+ENTRYPOINT ["/start.sh"]
