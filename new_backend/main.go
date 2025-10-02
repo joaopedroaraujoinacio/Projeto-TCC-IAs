@@ -3,32 +3,26 @@ package main
 import (
 	"os"
 	"log"
-	"net/http"
+	"go-project/config"
 	"go-project/routes"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	r := gin.Default()
+	cfg := config.Load()
+	db, err := config.ConnectDB(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
 
 	r.LoadHTMLGlob("templates/*")
-
 	r.Static("/static", "/static")
 
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title": "Hello World with HTMX",
-		})
-	})
-
-	// HTMX endpoint that returns HTML fragment
-	r.GET("/hello", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "hello.html", gin.H{
-			"message": "Hello World from HTMX!",
-		})
-	})
-
 	routes.SetupRoutes(r)
+	//r, db
 
 	port := os.Getenv("PORT")
 	if port == "" {
