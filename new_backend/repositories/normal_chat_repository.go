@@ -46,7 +46,7 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatRes
 		return nil, fmt.Errorf("failed to format request: %w", err)
 	}
 
-	resp, err := r.client.Post(r.ollamaURL+"/api/generate", "aplication/json", bytes.NewBuffer(jsonData))
+	resp, err := r.client.Post(r.ollamaURL+"/api/generate", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send the formated request to ollama: %w", err)
 	}

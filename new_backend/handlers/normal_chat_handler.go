@@ -21,8 +21,7 @@ func NewChatHandler(chatService services.ChatService) *ChatHandler {
 func (h *ChatHandler) Chat(c *gin.Context) {
 	var request models.ChatRequest
 
-	if err := c.ShouldBindJSON(&request);
-	err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

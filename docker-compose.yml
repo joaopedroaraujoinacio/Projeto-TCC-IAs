@@ -37,9 +37,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    # volumes:                         
+    volumes:                         
     # - ssl-certs:/app/ssl
-    # - ./templates:/app/templates
+    - ./new_backend/templates:/app/templates
     depends_on:
       postgres:
         condition: service_healthy
