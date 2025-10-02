@@ -21,8 +21,7 @@ func main() {
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "/static")
 
-	routes.SetupRoutes(r)
-	//r, db
+	routes.SetupRoutes(r, db)
 
 	port := os.Getenv("PORT")
 	if port == "" {

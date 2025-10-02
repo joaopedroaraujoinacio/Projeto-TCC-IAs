@@ -61,8 +61,9 @@ func ensureDBDirectory(databaseURL string) error {
 
 func initializeSchema(db *sql.DB) error {
 	schema := `
+	CREATE SEQUENCE sequence_rag_data START 1;
 	CREATE TABLE IF NOT EXISTS rag_data (
-		id INTEGER PRIMARY KEY,
+		id INTEGER PRIMARY KEY DEFAULT nextval('sequence_rag_data'),
 		content TEXT NOT NULL,
 		content_name VARCHAR(100),
 		embedding FLOAT[768]

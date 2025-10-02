@@ -11,10 +11,9 @@ import (
 func AddDataToRag(db *sql.DB, data *models.RagData) error {
 	embeddedData := utils.VectorToString(data.Embedding)
 
-	query := `INSERT INTO rag-data (content, content_name, embedding)
-	VALUES (?, ?, ?, ?) RETURNING id
+	query := `INSERT INTO rag_data (content, content_name, embedding)
+	VALUES (?, ?, ?) RETURNING id
 	`
-
 	log.Printf("executing query: %s", query)
 
 	err := db.QueryRow(query, data.Content, data.ContentName, embeddedData).Scan(&data.ID)

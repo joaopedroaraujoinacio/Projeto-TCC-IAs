@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"database/sql"
 	"go-project/handlers"
 	"go-project/services"
 	"go-project/repositories"
@@ -8,7 +9,7 @@ import (
 )
 
 
-func SetupRoutes(r *gin.Engine) {
+func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	chatRepo := repositories.NewChatRepository("http://ollama:11434")
 	chatService := services.NewChatService(chatRepo)
@@ -17,8 +18,8 @@ func SetupRoutes(r *gin.Engine) {
 
 	api := r.Group("/api") 
 	{
-
 		api.POST("/chat", chatHandler.Chat)
+		api.POST("/rag", handlers.CreateRagData(db))
 	}
 
 		r.StaticFile("/chat", "./templates/chat.html")

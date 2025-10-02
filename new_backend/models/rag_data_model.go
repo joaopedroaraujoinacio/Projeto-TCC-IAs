@@ -8,3 +8,14 @@ type RagData struct {
 	Embedding []float32 `json:"embedding,omitempty"`
 }
 
+type EmbeddingRequest struct {
+	Model string `json:"model"`
+	Prompt string `json:"prompt"`
+}
+
+type EmbeddingResponse struct {
+	Data []struct {
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+}
+
