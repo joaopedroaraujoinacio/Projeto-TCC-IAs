@@ -74,3 +74,51 @@ func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]
 	return documents, nil
 }
 
+func SearchSimilarDocuments(db *sql.DB, queryEmbedding []float32, limit int) ([]models.Document, error) {
+	embeddingStr := utils.VectorToString(queryEmbedding)
+
+	query := `
+		SELECT id, content, media_type, file_name, embedding, created_at,
+		       1 - array_cosine_similarity(embedding::FLOAT[], ?::FLOAT[]) as similarity
+		FROM documents 
+		ORDER BY array_cosine_similarity(embedding::FLOAT[], ?::FLOAT[]) DESC
+		LIMIT ?
+	`
+
+	log.Printf("Executing search query with embedding length: %d, limit: %d", len(queryEmbedding), limit)
+
+	rows, err := db.Query(query, embeddingStr, embeddingStr, limit)
+	if err != nil {
+		log.Printf("Search query error: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var documents []models.Document
+	for rows.Next() {
+		var doc models.Document
+		var similarity float64
+		var embeddingStr string
+		var mediaType, fileName sql.NullString
+
+		err := rows.Scan(&doc.ID, &doc.Content, &mediaType, &fileName, &embeddingStr, &doc.CreatedAt, &similarity)
+		if err != nil {
+			log.Printf("Row scan error: %v", err)
+			continue
+		}
+
+		if mediaType.Valid {
+			doc.MediaType = &mediaType.String
+		}
+		if fileName.Valid {
+			doc.FileName = &fileName.String
+		}
+		
+		doc.Embedding = utils.ParseVectorString(embeddingStr)
+
+		log.Printf("Found document ID %d with similarity: %.4f", doc.ID, similarity)
+		documents = append(documents, doc)
+	}
+
+	return documents, nil
+}

@@ -15,11 +15,12 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	chatService := services.NewChatService(chatRepo)
 	chatHandler := handlers.NewChatHandler(chatService)
 
-
 	api := r.Group("/api") 
 	{
 		api.POST("/chat", chatHandler.Chat)
 		api.POST("/rag", handlers.CreateRagData(db))
+		api.GET("/rag/search", handlers.SearchSimilarRagData(db))
+		// http://localhost:8080/api/rag/search?q=
 	}
 
 		r.StaticFile("/chat", "./templates/chat.html")

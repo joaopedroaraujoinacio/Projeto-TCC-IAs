@@ -15,21 +15,21 @@ services:
   #     - app_network
   #   restart: unless-stopped
 
-  postgres:
-    image: ankane/pgvector:v0.5.0
-    # ports:
-    #   - "5432:5432"
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+  # postgres:
+  #   image: ankane/pgvector:v0.5.0
+  #   # ports:
+  #   #   - "5432:5432"
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #   networks:
+  #     - app_network
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "postgres"]
 
   app:
     build: 
@@ -40,9 +40,9 @@ services:
     volumes:                         
     # - ssl-certs:/app/ssl
     - ./new_backend/templates:/app/templates
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - OLLAMA_URL=${OLLAMA_URL}
