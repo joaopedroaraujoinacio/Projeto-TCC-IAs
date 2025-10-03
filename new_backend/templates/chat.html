@@ -9,8 +9,8 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
         #messages { border: 1px solid #ccc; height: 400px; overflow-y: auto; padding: 10px; margin-bottom: 20px; }
         .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
-        .user { background: #e3f2fd; text-align: right; }
-        .assistant { background: #f5f5f5; }
+        .user { background: #e3f2fd; text-align: right; word-wrap: break-word; }
+        .assistant { background: #f5f5f5; word-wrap: break-word; }
         form { display: flex; gap: 10px; }
         input { flex: 1; padding: 10px; }
         button { padding: 10px 20px; }
@@ -21,64 +21,46 @@
     
     <div id="messages"></div>
 
-    <form hx-post="/api/chat" 
-          hx-headers='{"Content-Type": "application/json"}'
-          hx-on::before-request="handleBeforeRequest(event)"
-          hx-on::after-request="handleResponse(event)">
-        
-        <input type="text" name="message" id="messageInput" placeholder="Type message..." required>
-        <button type="submit">Send</button>
-    </form>
+    <form id="chatForm">
+    <input type="text" id="messageInput" placeholder="Type message..." required>
+    <button type="submit">Send</button>
+</form>
 
-    <script>
-        function handleBeforeRequest(event) {
-            const input = document.getElementById('messageInput');
-            const message = input.value;
-            
-            // Add user message to chat
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML += 
-                `<div class="message user"><strong>You:</strong> ${message}</div>`;
-            
-            // Convert form data to JSON
-            const xhr = event.detail.xhr;
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            
-            // Override the request body with JSON
-            const originalSend = xhr.send;
-            xhr.send = function(data) {
-                const jsonData = JSON.stringify({ message: message });
-                originalSend.call(this, jsonData);
-            };
-            
-            // Scroll to bottom
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+<script>
+const form = document.getElementById('chatForm');
+const input = document.getElementById('messageInput');
+const messagesDiv = document.getElementById('messages');
 
-        function handleResponse(event) {
-            const input = document.getElementById('messageInput');
-            
-            if (event.detail.successful) {
-                try {
-                    const response = JSON.parse(event.detail.xhr.responseText);
-                    
-                    // Add AI response
-                    const messagesDiv = document.getElementById('messages');
-                    messagesDiv.innerHTML += 
-                        `<div class="message assistant"><strong>AI:</strong> ${response.response}</div>`;
-                    
-                    // Clear input
-                    input.value = '';
-                    
-                    // Scroll to bottom
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                } catch (e) {
-                    console.error('Failed to parse response:', e);
-                }
-            } else {
-                console.error('Request failed:', event.detail.xhr.responseText);
-            }
-        }
-    </script>
+form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // evita reload da página
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Adiciona a mensagem do usuário
+    messagesDiv.innerHTML += `<div class="message user"><strong>You:</strong> ${message}</div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    input.value = '';
+
+    try {
+        // Envia para o backend
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await res.json();
+
+        // Adiciona a resposta da AI
+        messagesDiv.innerHTML += `<div class="message assistant"><strong>AI:</strong> ${data.response}</div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch (err) {
+        console.error('Erro ao enviar mensagem:', err);
+        messagesDiv.innerHTML += `<div class="message assistant"><strong>AI:</strong> Erro ao processar mensagem</div>`;
+    }
+});
+</script>
 </body>
 </html>
