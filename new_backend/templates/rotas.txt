@@ -1,0 +1,9 @@
+api.POST("/rag", handlers.CreateRagData(db))
+
+api/rag
+
+{
+  "content": "Computers are the unsung wizards of the modern world, crunching data faster than a caffeinated squirrel. Evolving from room-sized behemoths in the 1940s to pocket-sized powerhouses today, they've birthed the internet, AI, and endless cat videos. They're tools of creation and connection, but beware: one rogue update, and your "
+}
+
+rota de teste ----> http://localhost:8080/api/rag/search?q= botar pesquisa aqui! exemplo(computador) 
