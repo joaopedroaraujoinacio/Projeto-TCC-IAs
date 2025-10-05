@@ -64,7 +64,7 @@
     }
     button:hover { background: #ffde21; }
 
-    #uploadBox { 
+    #uploadBox{ 
         display:none; 
         position:fixed; 
         top:50%; left:50%; 
@@ -73,11 +73,43 @@
         padding:20px; 
         border:1px solid #444; 
         border-radius:8px;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    #helpBtn {
+        position: fixed;
+        top: 110px;
+        right: 350px;
+        width: 35px;
+        height: 35px;
+        border-radius: 30%;
+        background: #ffde21;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        transition: transform 0.2s, background 0.2s;
+        z-index: 10;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #helpBtn:hover {
+        background: #ffe94d;
+        transform: scale(1.1);
     }
     </style>
 </head>
 <body>
-    <h1>FAROL</h1> <!-- aqui deveria ser o logo -->
+    <button id="helpBtn">?</button>
+    <h1>FAROL</h1> <!-- aqui poderia ser o logo futuramente -->
+    
     <div id="messages"></div>
 
     <form id="chatForm">
@@ -94,6 +126,34 @@
         </form>
     </div>
 
+    <!-- Modal de ajuda -->
+    <div id="helpBox" style="
+        display:none;
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        background: #11192d;
+        color: #fff;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 15px;
+        width: 250px;
+        z-index: 20;
+    ">
+        <h2>Como o FAROL funciona 💡</h2>
+        <p>
+            O chat FAROL permite conversar com uma IA capaz de responder perguntas e analisar contextos.  
+            Você pode:
+        </p>
+        <ul style="text-align:left;">
+            <li>Enviar mensagens no campo de texto e clicar no botão <strong>Enviar</strong> para que a IA possa lhe ajudar.</li>
+            <li>Usar o botão <strong>Anexar</strong> para anexar arquivos que a IA poderá consultar futuramente.</li>
+            <li>Receber respostas da IA que podem incluir informações extraídas dos arquivos enviados ao banco de dados, caso haja relação com sua pergunta.</li>
+        </ul>
+        <p>Experimente perguntar algo ou enviar um documento para que o FAROL aprenda com ele!</p>
+        <button class="closeBtn" id="closeHelp">Fechar</button>
+    </div>
+
 <script>
 const form = document.getElementById('chatForm');
 const input = document.getElementById('messageInput');
@@ -105,8 +165,11 @@ form.addEventListener('submit', async (e) => {
     if (!message) return;
 
     // Adiciona a mensagem do usuário
-    messagesDiv.innerHTML += `<div class="message user"><strong>You:</strong> ${message}</div>`;
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    const userMsg = document.createElement('div'); // cria a div da mensagem
+    userMsg.className = 'message user';           // aplica a classe CSS
+    userMsg.innerHTML = `<strong>You:</strong> ${message}`; // adiciona conteúdo
+    messagesDiv.appendChild(userMsg);            // adiciona ao chat
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;   // scroll automático
     input.value = '';
 
     try {
@@ -118,11 +181,18 @@ form.addEventListener('submit', async (e) => {
         });
         const data = await res.json();
         // Adiciona a resposta da AI
-        messagesDiv.innerHTML += `<div class="message assistant"><strong>AI:</strong> ${data.response}</div>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        const aiMsg = document.createElement('div'); // cria a div da AI
+        aiMsg.className = 'message assistant';       // aplica classe CSS
+        aiMsg.innerHTML = `<strong>AI:</strong> ${data.response}`; // adiciona conteúdo
+        messagesDiv.appendChild(aiMsg);             // adiciona ao chat
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;   // scroll automático
+    
     } catch (err) {
         console.error('Erro ao enviar mensagem:', err);
-        messagesDiv.innerHTML += `<div class="message assistant"><strong>AI:</strong> Erro ao processar mensagem</div>`;
+        const errorMsg = document.createElement('div'); 
+        errorMsg.className = 'message assistant';
+        errorMsg.innerHTML = `<strong>AI:</strong> Erro ao processar mensagem`;
+        messagesDiv.appendChild(errorMsg);
     }
 });
 
@@ -144,6 +214,14 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
     document.getElementById('uploadBox').style.display = "none";
     e.target.reset();
 });
+
+// botão de ajuda
+document.getElementById('helpBtn').onclick = () => {
+    document.getElementById('helpBox').style.display = "block";
+};
+document.getElementById('closeHelp').onclick = () => {
+    document.getElementById('helpBox').style.display = "none";
+};
 </script>
 </body>
 </html>
