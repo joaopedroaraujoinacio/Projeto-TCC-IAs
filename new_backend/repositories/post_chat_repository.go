@@ -39,6 +39,7 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatRes
 	ollamaReq := models.OllamaRequest{
 		Model: model,
 		Prompt: request.Message,
+		Stream: false,
 	}
 
 	jsonData, err := json.Marshal(ollamaReq)
