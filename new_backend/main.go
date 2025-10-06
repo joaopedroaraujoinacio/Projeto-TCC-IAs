@@ -18,7 +18,6 @@ func main() {
 	}
 	defer db.Close()
 
-
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "/static")
 

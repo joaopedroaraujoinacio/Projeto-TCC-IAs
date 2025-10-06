@@ -1,14 +1,14 @@
 package repositories
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"go-project/models"
 	"io"
-	"net/http"
-	"strings"
+	"fmt"
 	"time"
+	"bytes"
+	"strings"
+	"net/http"
+	"encoding/json"
+	"go-project/models"
 )
 
 
@@ -60,21 +60,6 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatRes
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-
-	// fmt.Printf(string(body))
-
-
-
-	// var ollamaResp models.OllamaResponse
-	// if err := json.Unmarshal(body, &ollamaResp); err != nil {
-	// 	return nil, fmt.Errorf("failed to format ollama response: %w", err)
-	// }
-
-// 	return &models.ChatResponse{
-// 		Response: ollamaResp.Response,
-// 		Model: model,
-// 	}, nil
-// }
 
 	lines := strings.Split(string(body), "\n")
 	var fullResponse strings.Builder

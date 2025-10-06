@@ -1,0 +1,112 @@
+// package repositories
+//
+// import (
+// 	"io"
+// 	"log"
+// 	"fmt"
+// 	"bytes"
+// 	"strings"
+// 	"net/http"
+// 	"database/sql"
+// 	"encoding/json"
+// 	"go-project/utils"
+// 	"go-project/models"
+// )
+//
+//
+// func RagChatRepository(db *sql.DB, queryEmbedding []float32, limit int, request *models.ChatRequest) ([]models.RagData, error) {
+//
+// func (r *chatRepository) RagChatRepository(db *sql.DB, queryEmbedding []float32, limit int, request *models.ChatRequest) ([]models.Ragdata, *models.ChatResponse, error) {
+// 	embeddedData := utils.VectorToString(queryEmbedding)
+//
+// 	log.Printf("embedding string first 50 chars: %s", embeddedData[:50])
+//
+// 	query := `
+//     SELECT id, content,
+//            array_cosine_similarity(embedding, CAST(? AS FLOAT[768])) as similarity
+//     FROM rag_data 
+//     ORDER BY similarity DESC
+// 		LIMIT ?
+// `
+// 	log.Printf("Executing search query with embedding length: %d, limit: %d", len(queryEmbedding), limit)
+//
+// 	rows, err := db.Query(query, embeddedData, limit)
+// 	if err != nil {
+// 		log.Printf("search query error: %v", err)
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+//
+// 	var rag_data []models.RagData
+// 		for rows.Next() {
+// 		var data models.RagData
+// 		var similarity float64
+//
+// 		err := rows.Scan(&data.ID, &data.Content, &similarity)
+// 		if err != nil {
+// 			log.Printf("Row scan error: %v", err)
+// 			continue
+// 	}
+//
+// 	log.Printf("found data ID %d with similarity: %.4f", data.ID, similarity)
+// 	rag_data = append(rag_data, data)
+//
+// 	}	
+//
+// 	// return rag_data, nil
+//
+// 	model := request.Model
+// 	if model == "" {
+// 		model = "llama3.2:3b"
+// 	}
+//
+// 	ollamaReq := models.OllamaRequest{
+// 		Model: model,
+// 		Prompt: request.Message,
+// 	}
+//
+// 	jsonData, err := json.Marshal(ollamaReq)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to format request: %w", err)
+// 	}
+//
+// 	resp, err := r.client.Post(r.ollamaURL+"/api/generate", "application/json", bytes.NewBuffer(jsonData))
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to send the formated request to ollama: %w", err)
+// 	}
+// 	defer resp.Body.Close()
+//
+// 	if resp.StatusCode != http.StatusOK {
+// 		return nil, fmt.Errorf("failed to get response from ollama: %d", resp.StatusCode)
+// 	}
+//
+// 	body, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to read response body: %w", err)
+// 	}
+//
+// 	lines := strings.Split(string(body), "\n")
+// 	var fullResponse strings.Builder
+// 	// var model string
+//
+// 	for _, line := range lines {
+// 		line = strings.TrimSpace(line)
+// 		if line == "" {
+// 			continue
+// 		}
+//
+// 		var ollamaResp models.OllamaResponse
+// 		if err := json.Unmarshal([]byte(line), &ollamaResp); err != nil {
+// 			continue // Skip invalid JSON lines
+// 		}
+//
+// 		fullResponse.WriteString(ollamaResp.Response)
+// 		// model = ollamaResp.Model
+// 	}
+//
+// 	return &models.ChatResponse{
+// 		Response: fullResponse.String(),
+// 		Model: model,
+// 	}, nil
+// } 
+//
