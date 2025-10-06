@@ -51,6 +51,13 @@
         word-wrap: break-word; 
     }
 
+    .streaming { 
+        background: #3b3f58; 
+        color: #fff; 
+        word-wrap: break-word;
+        border-left: 3px solid #ffde21;
+    }
+
     form { display: flex; gap: 10px; }
     input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
     button { 
@@ -62,7 +69,45 @@
         cursor: pointer; 
         font-weight: bold;
     }
-    button:hover { background: #ffde21; }
+    button:hover { background: #ffe94d; }
+    button:disabled { background: #666; cursor: not-allowed; }
+
+    .toggle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+        background: #444;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+        background: #ffde21;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+    }
+
+    .toggle-switch.active .toggle-slider {
+        transform: translateX(26px);
+    }
 
     #uploadBox{ 
         display:none; 
@@ -94,7 +139,6 @@
         box-shadow: 0 0 10px rgba(0,0,0,0.3);
         transition: transform 0.2s, background 0.2s;
         z-index: 10;
-
         display: flex;
         align-items: center;
         justify-content: center;
@@ -108,17 +152,25 @@
 </head>
 <body>
     <button id="helpBtn">?</button>
-    <h1>FAROL</h1> <!-- aqui poderia ser o logo futuramente -->
+    <h1>FAROL</h1>
     
+    <!-- Toggle for streaming mode -->
+    <div class="toggle-container">
+        <span>Modo Normal</span>
+        <div class="toggle-switch" id="streamToggle">
+            <div class="toggle-slider"></div>
+        </div>
+        <span>Modo Streaming ⚡</span>
+    </div>
+
     <div id="messages"></div>
 
     <form id="chatForm">
         <input type="text" id="messageInput" placeholder="Escreva sua mensagem..." required>
-        <button type="submit">Enviar</button>
+        <button type="submit" id="sendBtn">Enviar</button>
         <button type="button" id="openUpload">Anexar</button>
     </form>
 
-    <!-- aqui é o novo botão para arquivos -->
     <div id="uploadBox">
         <form id="uploadForm">
             <input type="file" id="fileInput" required>
@@ -126,7 +178,6 @@
         </form>
     </div>
 
-    <!-- Modal de ajuda -->
     <div id="helpBox" style="
         display:none;
         position: absolute;
@@ -147,6 +198,7 @@
         </p>
         <ul style="text-align:left;">
             <li>Enviar mensagens no campo de texto e clicar no botão <strong>Enviar</strong> para que a IA possa lhe ajudar.</li>
+            <li>Usar o <strong>Modo Streaming</strong> para ver respostas em tempo real, palavra por palavra.</li>
             <li>Usar o botão <strong>Anexar</strong> para anexar arquivos que a IA poderá consultar futuramente.</li>
             <li>Receber respostas da IA que podem incluir informações extraídas dos arquivos enviados ao banco de dados, caso haja relação com sua pergunta.</li>
         </ul>
@@ -158,43 +210,124 @@
 const form = document.getElementById('chatForm');
 const input = document.getElementById('messageInput');
 const messagesDiv = document.getElementById('messages');
+const sendBtn = document.getElementById('sendBtn');
+const streamToggle = document.getElementById('streamToggle');
+let isStreaming = false;
+
+// Toggle streaming mode
+streamToggle.addEventListener('click', () => {
+    isStreaming = !isStreaming;
+    streamToggle.classList.toggle('active');
+});
 
 form.addEventListener('submit', async (e) => {
-    e.preventDefault(); // evita reload da página
+    e.preventDefault();
     const message = input.value.trim();
     if (!message) return;
 
-    // Adiciona a mensagem do usuário
-    const userMsg = document.createElement('div'); // cria a div da mensagem
-    userMsg.className = 'message user';           // aplica a classe CSS
-    userMsg.innerHTML = `<strong>You:</strong> ${message}`; // adiciona conteúdo
-    messagesDiv.appendChild(userMsg);            // adiciona ao chat
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;   // scroll automático
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user';
+    userMsg.innerHTML = `<strong>You:</strong> ${message}`;
+    messagesDiv.appendChild(userMsg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
     input.value = '';
 
+    // Disable button while processing
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Enviando...';
+
     try {
-        // Envia para o backend
-        const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-        });
-        const data = await res.json();
-        // Adiciona a resposta da AI
-        const aiMsg = document.createElement('div'); // cria a div da AI
-        aiMsg.className = 'message assistant';       // aplica classe CSS
-        aiMsg.innerHTML = `<strong>AI:</strong> ${data.response}`; // adiciona conteúdo
-        messagesDiv.appendChild(aiMsg);             // adiciona ao chat
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;   // scroll automático
-    
+        if (isStreaming) {
+            // STREAMING MODE
+            await handleStreamingChat(message);
+        } else {
+            // NORMAL MODE
+            await handleNormalChat(message);
+        }
     } catch (err) {
         console.error('Erro ao enviar mensagem:', err);
-        const errorMsg = document.createElement('div'); 
+        const errorMsg = document.createElement('div');
         errorMsg.className = 'message assistant';
         errorMsg.innerHTML = `<strong>AI:</strong> Erro ao processar mensagem`;
         messagesDiv.appendChild(errorMsg);
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Enviar';
     }
 });
+
+// Normal chat (complete response at once)
+async function handleNormalChat(message) {
+    const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'message assistant';
+    aiMsg.innerHTML = `<strong>AI:</strong> ${data.response}`;
+    messagesDiv.appendChild(aiMsg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Streaming chat (real-time chunks)
+async function handleStreamingChat(message) {
+    // Create AI message container
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'message streaming';
+    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span>`;
+    messagesDiv.appendChild(aiMsg);
+    
+    const contentSpan = document.getElementById('streamingContent');
+    let fullResponse = '';
+
+    const res = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+            if (line.startsWith('event: message')) {
+                continue;
+            }
+            
+            if (line.startsWith('data: ')) {
+                const chunk = line.slice(6);
+                // Add space only if chunk doesn't already end/start with space
+                if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
+                    fullResponse += ' ';
+                }
+                fullResponse += chunk;
+                contentSpan.textContent = fullResponse;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            
+            if (line.startsWith('event: done')) {
+                contentSpan.innerHTML = fullResponse;
+            }
+            
+            if (line.startsWith('event: error')) {
+                contentSpan.innerHTML = '<span style="color:red;">Erro no streaming</span>';
+            }
+        }
+    }
+}
 
 document.getElementById('openUpload').onclick = () => {
     const box = document.getElementById('uploadBox');
@@ -215,7 +348,6 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
     e.target.reset();
 });
 
-// botão de ajuda
 document.getElementById('helpBtn').onclick = () => {
     document.getElementById('helpBox').style.display = "block";
 };

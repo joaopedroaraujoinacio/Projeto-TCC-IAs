@@ -14,6 +14,7 @@ import (
 
 type ChatRepository interface {
 	SendToLLM(request *models.ChatRequest) (*models.ChatResponse, error)
+	SendToLLMStreaming(request *models.ChatRequest) (<-chan StreamChunk, error) // ADD THIS
 }
 
 func NewChatRepository(ollamaURL string) ChatRepository {
