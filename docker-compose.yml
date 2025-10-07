@@ -7,31 +7,12 @@ services:
     ports:
       - "8080:8080"
     volumes:                         
-    # - ssl-certs:/app/ssl
     - ./new_backend/templates:/app/templates
+    - ./new_backend/static:/app/static
+    networks:
+      - app_network
+    restart: unless-stopped
 
-  # ollama:
-  #   build:
-  #     context: ./new_backend/
-  #     dockerfile: Dockerfile.ollama
-  #   networks:
-  #     - app_network
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: all
-  #             capabilities: [gpu]
-  #   runtime: nvidia
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #     - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-
-  # Uncoment code below for mac
   ollama:
     build:
       context: ./new_backend/
