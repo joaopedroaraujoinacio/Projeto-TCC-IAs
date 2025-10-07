@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FAROL CHAT</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
     body { 
         font-family: Arial, sans-serif; 
@@ -124,8 +123,8 @@
     }
 
     #helpBtn {
-        position: fixed;
-        top: 110px;
+        position: absolute;
+        top: 150px;
         right: 350px;
         width: 35px;
         height: 35px;
@@ -152,8 +151,11 @@
 </head>
 <body>
     <button id="helpBtn">?</button>
-    <h1>FAROL</h1>
-    
+ 
+    <h1 style="text-align:center; margin-bottom:30px;">
+        <img src="/static/images/farol.png" alt="FAROL Logo" style="width:150px;">
+    </h1>
+
     <!-- Toggle for streaming mode -->
     <div class="toggle-container">
         <span>Modo Normal</span>

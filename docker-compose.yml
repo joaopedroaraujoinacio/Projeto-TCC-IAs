@@ -40,6 +40,7 @@ services:
     volumes:                         
     # - ssl-certs:/app/ssl
     - ./new_backend/templates:/app/templates
+    - ./new_backend/static:/app/static
     # depends_on:
     #   postgres:
     #     condition: service_healthy
