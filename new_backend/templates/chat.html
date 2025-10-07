@@ -283,7 +283,7 @@ async function handleStreamingChat(message) {
     let firstTokenTime = null;
 
     // Choose endpoint: /api/chat or /api/rag/chat
-    const endpoint = isStreaming ? '/api/rag/chat' : '/api/chat';
+    const endpoint = isStreaming ? '/api/chat/rag' : '/api/chat';
 
     const res = await fetch(endpoint, {
         method: 'POST',
