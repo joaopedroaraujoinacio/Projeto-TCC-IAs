@@ -57,6 +57,19 @@
         border-left: 3px solid #ffde21;
     }
 
+    .token-stats {
+        font-size: 11px;
+        color: #999;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #555;
+        font-family: 'Courier New', monospace;
+    }
+
+    .token-stats span {
+        margin-right: 12px;
+    }
+
     form { display: flex; gap: 10px; }
     input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
     button { 
@@ -156,13 +169,13 @@
         <img src="/static/images/farol.png" alt="FAROL Logo" style="width:150px;">
     </h1>
 
-    <!-- Toggle for streaming mode -->
+    <!-- Toggle for RAG mode -->
     <div class="toggle-container">
-        <span>Modo Normal</span>
+        <span>Chat Normal</span>
         <div class="toggle-switch" id="streamToggle">
             <div class="toggle-slider"></div>
         </div>
-        <span>Modo Streaming ⚡</span>
+        <span>RAG Chat</span>
     </div>
 
     <div id="messages"></div>
@@ -200,7 +213,8 @@
         </p>
         <ul style="text-align:left;">
             <li>Enviar mensagens no campo de texto e clicar no botão <strong>Enviar</strong> para que a IA possa lhe ajudar.</li>
-            <li>Usar o <strong>Modo Streaming</strong> para ver respostas em tempo real, palavra por palavra.</li>
+            <li>Usar o <strong>Chat Normal</strong> para perguntas gerais.</li>
+            <li>Usar o <strong>RAG Chat</strong> para consultar documentos enviados.</li>
             <li>Usar o botão <strong>Anexar</strong> para anexar arquivos que a IA poderá consultar futuramente.</li>
             <li>Receber respostas da IA que podem incluir informações extraídas dos arquivos enviados ao banco de dados, caso haja relação com sua pergunta.</li>
         </ul>
@@ -240,13 +254,7 @@ form.addEventListener('submit', async (e) => {
     sendBtn.textContent = 'Enviando...';
 
     try {
-        if (isStreaming) {
-            // STREAMING MODE
-            await handleStreamingChat(message);
-        } else {
-            // NORMAL MODE
-            await handleNormalChat(message);
-        }
+        await handleStreamingChat(message);
     } catch (err) {
         console.error('Erro ao enviar mensagem:', err);
         const errorMsg = document.createElement('div');
@@ -259,34 +267,25 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// Normal chat (complete response at once)
-async function handleNormalChat(message) {
-    const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-    });
-    const data = await res.json();
-    
-    const aiMsg = document.createElement('div');
-    aiMsg.className = 'message assistant';
-    aiMsg.innerHTML = `<strong>AI:</strong> ${data.response}`;
-    messagesDiv.appendChild(aiMsg);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
 // Streaming chat (real-time chunks)
 async function handleStreamingChat(message) {
     // Create AI message container
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
-    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span>`;
+    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span><div class="token-stats" id="tokenStats"></div>`;
     messagesDiv.appendChild(aiMsg);
     
     const contentSpan = document.getElementById('streamingContent');
+    const statsSpan = document.getElementById('tokenStats');
     let fullResponse = '';
+    let tokenCount = 0;
+    let startTime = Date.now();
+    let firstTokenTime = null;
 
-    const res = await fetch('/api/chat/stream', {
+    // Choose endpoint: /api/chat or /api/rag/chat
+    const endpoint = isStreaming ? '/api/rag/chat' : '/api/chat';
+
+    const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message })
@@ -311,17 +310,48 @@ async function handleStreamingChat(message) {
             
             if (line.startsWith('data: ')) {
                 const chunk = line.slice(6);
+                
+                // Track first token time
+                if (!firstTokenTime) {
+                    firstTokenTime = Date.now();
+                }
+                
+                tokenCount++;
+                
                 // Add space only if chunk doesn't already end/start with space
                 if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
                     fullResponse += ' ';
                 }
                 fullResponse += chunk;
                 contentSpan.textContent = fullResponse;
+                
+                // Update stats in real-time
+                const elapsed = (Date.now() - firstTokenTime) / 1000;
+                const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
+                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                
+                statsSpan.innerHTML = `
+                    <span>${tokensPerSec} tok/sec</span> • 
+                    <span>${tokenCount} tokens</span> • 
+                    <span>${timeToFirst}s to first token</span>
+                `;
+                
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
             
             if (line.startsWith('event: done')) {
+                const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
+                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                
+                aiMsg.className = 'message assistant';
                 contentSpan.innerHTML = fullResponse;
+                statsSpan.innerHTML = `
+                    <span>${avgSpeed} tok/sec</span> • 
+                    <span>${tokenCount} tokens</span> • 
+                    <span>${timeToFirst}s to first token</span> • 
+                    <span>Stop reason: EOS Token Found</span>
+                `;
             }
             
             if (line.startsWith('event: error')) {
