@@ -22,3 +22,10 @@ type OllamaResponse struct {
 	Done bool `json:"done"`
 }
 
+type StreamChunk struct {
+	Text  string
+	Model string
+	Done  bool
+	Error error
+}
+

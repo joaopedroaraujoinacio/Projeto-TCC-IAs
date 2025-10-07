@@ -1,11 +1,10 @@
 package repositories
 
 import (
-	"io"
 	"fmt"
 	"time"
+	"bufio"
 	"bytes"
-	"strings"
 	"net/http"
 	"encoding/json"
 	"go-project/models"
@@ -13,8 +12,7 @@ import (
 
 
 type ChatRepository interface {
-	SendToLLM(request *models.ChatRequest) (*models.ChatResponse, error)
-	SendToLLMStreaming(request *models.ChatRequest) (<-chan StreamChunk, error) // ADD THIS
+	SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error)
 }
 
 func NewChatRepository(ollamaURL string) ChatRepository {
@@ -31,17 +29,16 @@ type chatRepository struct {
 	client	*http.Client
 }
 
-func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatResponse, error) {
+func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error) {
 	model := request.Model
 	if model == "" {
-		// model = "llama3.2:3b"
-		model = "phi3.5:3.8b"
+		model = "llama3.2:3b"
 	}
 
 	ollamaReq := models.OllamaRequest{
-		Model: model,
+		Model:  model,
 		Prompt: request.Message,
-		Stream: false,
+		Stream: true, 
 	}
 
 	jsonData, err := json.Marshal(ollamaReq)
@@ -51,40 +48,53 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatRes
 
 	resp, err := r.client.Post(r.ollamaURL+"/api/generate", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to send the formated request to ollama: %w", err)
+		return nil, fmt.Errorf("failed to send request to ollama: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
 		return nil, fmt.Errorf("failed to get response from ollama: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
+	streamChan := make(chan models.StreamChunk, 10)
 
-	lines := strings.Split(string(body), "\n")
-	var fullResponse strings.Builder
-	// var model string
-	
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		
-		var ollamaResp models.OllamaResponse
-		if err := json.Unmarshal([]byte(line), &ollamaResp); err != nil {
-			continue // Skip invalid JSON lines
-		}
-		
-		fullResponse.WriteString(ollamaResp.Response)
-		// model = ollamaResp.Model
-	}
+	go func() {
+		defer close(streamChan)      
+		defer resp.Body.Close()     
 
-	return &models.ChatResponse{
-		Response: fullResponse.String(),
-		Model: model,
-	}, nil
+		scanner := bufio.NewScanner(resp.Body)
+		
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line == "" {
+				continue 
+			}
+
+			var ollamaResp models.OllamaResponse
+			if err := json.Unmarshal([]byte(line), &ollamaResp); err != nil {
+				streamChan <- models.StreamChunk{
+					Error: fmt.Errorf("failed to parse response: %w", err),
+				}
+				continue
+			}
+
+			streamChan <- models.StreamChunk{
+				Text:  ollamaResp.Response, 
+				Done:  ollamaResp.Done,
+			}
+
+			if ollamaResp.Done {
+				break
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			streamChan <- models.StreamChunk{
+				Error: fmt.Errorf("scanner error: %w", err),
+			}
+		}
+	}()
+
+	return streamChan, nil
 }
+
