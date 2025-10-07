@@ -34,7 +34,8 @@ type chatRepository struct {
 func (r *chatRepository) SendToLLM(request *models.ChatRequest) (*models.ChatResponse, error) {
 	model := request.Model
 	if model == "" {
-		model = "llama3.2:3b"
+		// model = "llama3.2:3b"
+		model = "phi3.5:3.8b"
 	}
 
 	ollamaReq := models.OllamaRequest{

@@ -50,7 +50,7 @@ func (s *ragChatService) RagChatService(db *sql.DB, query string, limit int, req
 
 	context := formatContext(results)
 
-	request.Message = fmt.Sprintf("Context: %s\n\nQuestion: %s", context, request.Message)
+	request.Message = fmt.Sprintf("Context: %s\n\nQuestion: %s. Please, if the context is not found or unrelaed, make it clear to the user.", context, request.Message)
 
 	response, err := s.chatRepo.SendToLLM(request)
 	if err != nil {
