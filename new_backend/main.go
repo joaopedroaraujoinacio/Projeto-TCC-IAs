@@ -19,7 +19,7 @@ func main() {
 	defer db.Close()
 
 	r.LoadHTMLGlob("templates/*")
-	r.Static("/static", "/static")
+	r.Static("/static", "./static")
 
 	routes.SetupRoutes(r, db)
 

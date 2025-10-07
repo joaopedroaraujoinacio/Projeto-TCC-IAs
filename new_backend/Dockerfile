@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y \
 # Copy binary and assets
 COPY --from=builder /app/main .
 COPY --from=builder /app/templates ./templates
-# COPY --from=builder /app/static ./static
+COPY --from=builder /app/static ./static
 
 ENV GIN_MODE=release
 ENV PORT=8080
