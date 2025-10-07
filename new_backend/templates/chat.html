@@ -57,6 +57,19 @@
         border-left: 3px solid #ffde21;
     }
 
+    .token-stats {
+        font-size: 11px;
+        color: #999;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #555;
+        font-family: 'Courier New', monospace;
+    }
+
+    .token-stats span {
+        margin-right: 12px;
+    }
+
     form { display: flex; gap: 10px; }
     input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
     button { 
@@ -259,14 +272,18 @@ async function handleStreamingChat(message) {
     // Create AI message container
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
-    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span>`;
+    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span><div class="token-stats" id="tokenStats"></div>`;
     messagesDiv.appendChild(aiMsg);
     
     const contentSpan = document.getElementById('streamingContent');
+    const statsSpan = document.getElementById('tokenStats');
     let fullResponse = '';
+    let tokenCount = 0;
+    let startTime = Date.now();
+    let firstTokenTime = null;
 
     // Choose endpoint: /api/chat or /api/rag/chat
-    const endpoint = isStreaming ? '/api/chat/rag' : '/api/chat';
+    const endpoint = isStreaming ? '/api/rag/chat' : '/api/chat';
 
     const res = await fetch(endpoint, {
         method: 'POST',
@@ -293,17 +310,48 @@ async function handleStreamingChat(message) {
             
             if (line.startsWith('data: ')) {
                 const chunk = line.slice(6);
+                
+                // Track first token time
+                if (!firstTokenTime) {
+                    firstTokenTime = Date.now();
+                }
+                
+                tokenCount++;
+                
                 // Add space only if chunk doesn't already end/start with space
                 if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
                     fullResponse += ' ';
                 }
                 fullResponse += chunk;
                 contentSpan.textContent = fullResponse;
+                
+                // Update stats in real-time
+                const elapsed = (Date.now() - firstTokenTime) / 1000;
+                const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
+                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                
+                statsSpan.innerHTML = `
+                    <span>${tokensPerSec} tok/sec</span> • 
+                    <span>${tokenCount} tokens</span> • 
+                    <span>${timeToFirst}s to first token</span>
+                `;
+                
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
             
             if (line.startsWith('event: done')) {
+                const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
+                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                
+                aiMsg.className = 'message assistant';
                 contentSpan.innerHTML = fullResponse;
+                statsSpan.innerHTML = `
+                    <span>${avgSpeed} tok/sec</span> • 
+                    <span>${tokenCount} tokens</span> • 
+                    <span>${timeToFirst}s to first token</span> • 
+                    <span>Stop reason: EOS Token Found</span>
+                `;
             }
             
             if (line.startsWith('event: error')) {
