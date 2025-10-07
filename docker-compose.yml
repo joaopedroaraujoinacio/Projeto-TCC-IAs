@@ -9,14 +9,6 @@ services:
     volumes:                         
     # - ssl-certs:/app/ssl
     - ./new_backend/templates:/app/templates
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - OLLAMA_URL=${OLLAMA_URL}
-      - GIN_MODE=debug
-      - LOG_LEVEL=debug
-    networks:
-      - app_network
-    restart: unless-stopped
 
   # ollama:
   #   build:
