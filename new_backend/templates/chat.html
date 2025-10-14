@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FAROL CHAT</title>
+    <link rel="icon" href="/static/images/fi.png" type="image/png">
     <style>
     body { 
         font-family: Arial, sans-serif; 
         max-width: 800px; 
-        margin: 50px auto; 
-        padding: 20px; 
+        margin: 0 auto; 
+        padding: 15px; 
         background: #0a0f1f; 
         color: #f1f1f1; 
     }
@@ -20,14 +21,15 @@
         height: 400px; 
         overflow-y: auto; 
         padding: 10px; 
-        margin-bottom: 20px; 
+        margin-bottom: 15px; 
         border-radius: 8px;
     }
 
     h1 {
         text-align: center;
         color: #ffffff; 
-        margin-bottom: 30px; 
+        margin-bottom: 15px; 
+        margin-top: 5px;
         font-size: 2.5em; 
     }
 
@@ -71,54 +73,92 @@
     }
 
     form { display: flex; gap: 10px; }
-    input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
+    
+    input { 
+        flex: 1; 
+        padding: 12px 16px; 
+        border-radius: 12px; 
+        border: 2px solid #2a2f45; 
+        background: #1a1f35;
+        color: #f1f1f1;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    input:focus {
+        outline: none;
+        border-color: #ffde21;
+        box-shadow: 0 2px 12px rgba(255,222,33,0.3);
+        background: #1f2540;
+    }
+    input::placeholder {
+        color: #7a7f95;
+    }
+    
     button { 
-        padding: 10px 20px; 
+        padding: 12px 24px; 
         background: #ffde21; 
         color: #000; 
         border: none; 
-        border-radius: 5px; 
+        border-radius: 12px; 
         cursor: pointer; 
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255,222,33,0.3);
     }
-    button:hover { background: #ffe94d; }
-    button:disabled { background: #666; cursor: not-allowed; }
+    button:hover { 
+        background: #ffe94d; 
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,222,33,0.4);
+    }
+    button:active {
+        transform: translateY(0);
+    }
+    button:disabled { 
+        background: #666; 
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
 
-    .toggle-container {
+    .tabs-container {
         display: flex;
         justify-content: center;
-        align-items: center;
         gap: 10px;
         margin-bottom: 15px;
     }
 
-    .toggle-switch {
-        position: relative;
-        width: 50px;
-        height: 24px;
-        background: #444;
+    .tab-btn {
+        padding: 10px 30px;
+        background: #2a2f45;
+        color: #7a7f95;
+        border: 2px solid #2a2f45;
         border-radius: 12px;
         cursor: pointer;
-        transition: background 0.3s;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: none;
     }
 
-    .toggle-switch.active {
+    .tab-btn:hover {
+        background: #353a52;
+        color: #a0a5b8;
+        transform: none;
+    }
+
+    .tab-btn.active {
         background: #ffde21;
+        color: #000;
+        border-color: #ffde21;
+        box-shadow: 0 2px 8px rgba(255,222,33,0.3);
     }
 
-    .toggle-slider {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 20px;
-        height: 20px;
-        background: white;
-        border-radius: 50%;
-        transition: transform 0.3s;
-    }
-
-    .toggle-switch.active .toggle-slider {
-        transform: translateX(26px);
+    .tab-btn.active:hover {
+        background: #ffe94d;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,222,33,0.4);
     }
 
     #uploadBox{ 
@@ -137,19 +177,19 @@
 
     #helpBtn {
         position: absolute;
-        top: 190px;
-        right: 350px;
-        width: 35px;
-        height: 35px;
-        border-radius: 30%;
+        top: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
         background: #ffde21;
         color: #000;
         border: none;
-        font-weight: bold;
-        font-size: 18px;
+        font-weight: 700;
+        font-size: 20px;
         cursor: pointer;
-        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        transition: transform 0.2s, background 0.2s;
+        box-shadow: 0 3px 12px rgba(255,222,33,0.4);
+        transition: all 0.3s ease;
         z-index: 10;
         display: flex;
         align-items: center;
@@ -158,24 +198,25 @@
 
     #helpBtn:hover {
         background: #ffe94d;
-        transform: scale(1.1);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 16px rgba(255,222,33,0.5);
+    }
+    
+    #helpBtn:active {
+        transform: translateY(0);
     }
     </style>
 </head>
 <body>
     <button id="helpBtn">?</button>
  
-    <h1 style="text-align:center; margin-bottom:30px;">
+    <h1 style="text-align:center; margin-bottom:15px; margin-top:5px;">
         <img src="/static/images/farol.png" alt="FAROL Logo" style="width:150px;">
     </h1>
 
-    <!-- Toggle for RAG mode -->
-    <div class="toggle-container">
-        <span>Chat Normal</span>
-        <div class="toggle-switch" id="streamToggle">
-            <div class="toggle-slider"></div>
-        </div>
-        <span>RAG Chat 📚</span>
+    <div class="tabs-container">
+        <button class="tab-btn active" id="normalChatTab">Chat Normal</button>
+        <button class="tab-btn" id="ragChatTab">RAG Chat</button>
     </div>
 
     <div id="messages"></div>
@@ -206,7 +247,7 @@
         width: 250px;
         z-index: 20;
     ">
-        <h2>Como o FAROL funciona 💡</h2>
+        <h2>SOBRE</h2>
         <p>
             O chat FAROL permite conversar com uma IA capaz de responder perguntas e analisar contextos.  
             Você pode:
@@ -227,13 +268,20 @@ const form = document.getElementById('chatForm');
 const input = document.getElementById('messageInput');
 const messagesDiv = document.getElementById('messages');
 const sendBtn = document.getElementById('sendBtn');
-const streamToggle = document.getElementById('streamToggle');
-let isStreaming = false;
+const normalChatTab = document.getElementById('normalChatTab');
+const ragChatTab = document.getElementById('ragChatTab');
+let isRagMode = false;
 
-// Toggle streaming mode
-streamToggle.addEventListener('click', () => {
-    isStreaming = !isStreaming;
-    streamToggle.classList.toggle('active');
+normalChatTab.addEventListener('click', () => {
+    isRagMode = false;
+    normalChatTab.classList.add('active');
+    ragChatTab.classList.remove('active');
+});
+
+ragChatTab.addEventListener('click', () => {
+    isRagMode = true;
+    ragChatTab.classList.add('active');
+    normalChatTab.classList.remove('active');
 });
 
 form.addEventListener('submit', async (e) => {
@@ -241,7 +289,6 @@ form.addEventListener('submit', async (e) => {
     const message = input.value.trim();
     if (!message) return;
 
-    // Add user message
     const userMsg = document.createElement('div');
     userMsg.className = 'message user';
     userMsg.innerHTML = `<strong>You:</strong> ${message}`;
@@ -249,7 +296,6 @@ form.addEventListener('submit', async (e) => {
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     input.value = '';
 
-    // Disable button while processing
     sendBtn.disabled = true;
     sendBtn.textContent = 'Enviando...';
 
@@ -267,9 +313,7 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// Streaming chat (real-time chunks)
 async function handleStreamingChat(message) {
-    // Create AI message container
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
     aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span><div class="token-stats" id="tokenStats"></div>`;
@@ -282,8 +326,7 @@ async function handleStreamingChat(message) {
     let startTime = Date.now();
     let firstTokenTime = null;
 
-    // Choose endpoint: /api/chat or /api/rag/chat
-    const endpoint = isStreaming ? '/api/chat/rag' : '/api/chat';
+    const endpoint = isRagMode ? '/api/chat/rag' : '/api/chat';
 
     const res = await fetch(endpoint, {
         method: 'POST',
@@ -311,21 +354,18 @@ async function handleStreamingChat(message) {
             if (line.startsWith('data: ')) {
                 const chunk = line.slice(6);
                 
-                // Track first token time
                 if (!firstTokenTime) {
                     firstTokenTime = Date.now();
                 }
                 
                 tokenCount++;
                 
-                // Add space only if chunk doesn't already end/start with space
                 if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
                     fullResponse += ' ';
                 }
                 fullResponse += chunk;
                 contentSpan.textContent = fullResponse;
                 
-                // Update stats in real-time
                 const elapsed = (Date.now() - firstTokenTime) / 1000;
                 const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
                 const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
