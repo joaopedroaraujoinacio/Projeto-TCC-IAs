@@ -316,11 +316,21 @@ form.addEventListener('submit', async (e) => {
 async function handleStreamingChat(message) {
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
-    aiMsg.innerHTML = `<strong>AI:</strong> <span id="streamingContent"></span><div class="token-stats" id="tokenStats"></div>`;
+
+    const aiLabel = document.createElement('strong');
+    aiLabel.textContent = 'AI: ';
+
+    const contentSpan = document.createElement('span');
+    const statsSpan = document.createElement('div');
+    statsSpan.className = 'token-stats';
+
+    aiMsg.appendChild(aiLabel);
+    aiMsg.appendChild(contentSpan);
+    aiMsg.appendChild(statsSpan);
+
     messagesDiv.appendChild(aiMsg);
-    
-    const contentSpan = document.getElementById('streamingContent');
-    const statsSpan = document.getElementById('tokenStats');
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
     let fullResponse = '';
     let tokenCount = 0;
     let startTime = Date.now();
@@ -343,62 +353,26 @@ async function handleStreamingChat(message) {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
 
+        // Quebra o buffer em linhas (SSE envia cada dado separado por \n\n)
+        const lines = buffer.split('\n');
         for (const line of lines) {
-            if (line.startsWith('event: message')) {
-                continue;
-            }
-            
-            if (line.startsWith('data: ')) {
-                const chunk = line.slice(6);
-                
-                if (!firstTokenTime) {
-                    firstTokenTime = Date.now();
+            if (line.startsWith('data:')) {
+                const text = line.replace('data:', '').trim();
+                if (text && text !== '[DONE]') {
+                    fullResponse += text + ' ';
+                    contentSpan.textContent = fullResponse;
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 }
-                
-                tokenCount++;
-                
-                if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
-                    fullResponse += ' ';
-                }
-                fullResponse += chunk;
-                contentSpan.textContent = fullResponse;
-                
-                const elapsed = (Date.now() - firstTokenTime) / 1000;
-                const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
-                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
-                
-                statsSpan.innerHTML = `
-                    <span>${tokensPerSec} tok/sec</span> • 
-                    <span>${tokenCount} tokens</span> • 
-                    <span>${timeToFirst}s to first token</span>
-                `;
-                
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
-            
-            if (line.startsWith('event: done')) {
-                const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-                const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
-                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
-                
-                aiMsg.className = 'message assistant';
-                contentSpan.innerHTML = fullResponse;
-                statsSpan.innerHTML = `
-                    <span>${avgSpeed} tok/sec</span> • 
-                    <span>${tokenCount} tokens</span> • 
-                    <span>${timeToFirst}s to first token</span> • 
-                    <span>Stop reason: EOS Token Found</span>
-                `;
-            }
-            
-            if (line.startsWith('event: error')) {
-                contentSpan.innerHTML = '<span style="color:red;">Erro no streaming</span>';
             }
         }
+
+        // Mantém o que sobrou no buffer (caso o chunk tenha cortado uma linha no meio)
+        buffer = lines[lines.length - 1];
     }
+
+    // Finaliza a mensagem
+    aiMsg.className = 'message assistant';
 }
 
 document.getElementById('openUpload').onclick = () => {

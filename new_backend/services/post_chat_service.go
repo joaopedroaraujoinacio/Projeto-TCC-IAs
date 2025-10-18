@@ -46,21 +46,33 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 			return
 		}
 
+		buffer := ""
+
 		// Read from repository's channel
 		for chunk := range streamChan {
-			// Check for errors in chunk
 			if chunk.Error != nil {
 				errorChan <- chunk.Error
 				return
 			}
 
-			// Send text to handler
-			if chunk.Text != "" {
-				messageChan <- chunk.Text
+			buffer += chunk.Text
+
+			// Envia palavras completas ao handler
+			for {
+				spaceIdx := strings.Index(buffer, " ")
+				if spaceIdx == -1 {
+					break
+				}
+				word := buffer[:spaceIdx+1] // inclui o espaço
+				messageChan <- word
+				buffer = buffer[spaceIdx+1:]
 			}
 
-			// Stop if done
+			// Se o chunk indicar fim, envia o que restou
 			if chunk.Done {
+				if buffer != "" {
+					messageChan <- buffer
+				}
 				return
 			}
 		}
