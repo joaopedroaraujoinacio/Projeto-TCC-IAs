@@ -218,7 +218,24 @@
     }
 
     #helpBtn { right: 20px; }
-    #clearChatBtn { right: 70px; background: #ff4444; color: #fff; }
+    #clearChatBtn {
+        position: fixed;
+        top: 20px;
+        right: 70px;
+        padding: 10px 20px;
+        height: 40px;
+        width: auto;
+        border-radius: 20px;
+        background: #ff0000;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 3px 12px rgba(255, 0, 0, 0.4);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
     #clearChatBtn:hover { background: #ff6666; }
 
     #closeHelp {
@@ -264,7 +281,7 @@
     </style>
 </head>
 <body>
-    <button id="clearChatBtn" title="Limpar conversa"></button>
+    <button id="clearChatBtn">Limpar conversa</button>
     <button id="helpBtn">?</button>
  
     <h1>
