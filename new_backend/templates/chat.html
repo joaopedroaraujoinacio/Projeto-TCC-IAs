@@ -61,7 +61,7 @@
     .message { 
         display: flex;
         gap: 12px;
-        max-width: 65%;
+        max-width: 60%;
         animation: slideIn 0.3s ease;
     }
 
@@ -94,10 +94,16 @@
         padding: 12px 16px;
         border-radius: 16px;
         word-wrap: break-word;
+        overflow-wrap: break-word; 
+        max-width: 100%; 
         line-height: 1.5;
     }
 
-    .user > div { background: #ffde21; color: #000; }
+    .user > div { 
+        background: #ffde21; 
+        color: #000; 
+        word-break: break-all; 
+    }
     .streaming > div { border-left: 3px solid #ffde21; }
 
     .token-stats {
@@ -365,11 +371,13 @@ form.addEventListener('submit', async (e) => {
 async function handleStreamingChat(message) {
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
-    aiMsg.innerHTML = `<div><span id="streamingContent"></span><div class="token-stats" id="tokenStats"></div></div>`;
-    messagesDiv.appendChild(aiMsg);
     
-    const contentSpan = document.getElementById('streamingContent');
-    const statsSpan = document.getElementById('tokenStats');
+    aiMsg.innerHTML = `<div><span class="streaming-content"></span><div class="token-stats streaming-stats"></div></div>`;
+    messagesDiv.appendChild(aiMsg);
+
+    const contentSpan = aiMsg.querySelector('.streaming-content');
+    const statsSpan = aiMsg.querySelector('.streaming-stats');
+
     let fullResponse = '';
     let tokenCount = 0;
     let startTime = Date.now();
