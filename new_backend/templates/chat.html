@@ -97,12 +97,13 @@
         overflow-wrap: break-word; 
         max-width: 100%; 
         line-height: 1.5;
+        white-space: pre-wrap;
     }
 
     .user > div { 
         background: #ffde21; 
         color: #000; 
-        word-break: break-all; 
+        word-break: break-word; 
     }
     .streaming > div { border-left: 3px solid #ffde21; }
 
@@ -113,9 +114,10 @@
         padding-top: 8px;
         border-top: 1px solid #2a2f45;
         font-family: 'Courier New', monospace;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
     }
-
-    .token-stats span { margin-right: 12px; }
 
     form { 
         padding: 20px;
@@ -177,6 +179,8 @@
     button:active { transform: translateY(0); }
     button:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; }
     button.icon { width: auto; padding: 12px 20px; font-size: 14px; }
+    button.danger { background: #ff4444; }
+    button.danger:hover { background: #ff6666; }
 
     #uploadBox { 
         display: none; 
@@ -196,10 +200,9 @@
     #uploadBox h3 { margin-bottom: 20px; color: #ffde21; }
     #uploadBox input[type="file"] { margin: 20px 0; color: #f1f1f1; }
 
-    #helpBtn {
+    #helpBtn, #clearChatBtn {
         position: fixed;
         top: 20px;
-        right: 20px;
         width: 40px;
         height: 40px;
         border-radius: 50%;
@@ -213,6 +216,10 @@
         align-items: center;
         justify-content: center;
     }
+
+    #helpBtn { right: 20px; }
+    #clearChatBtn { right: 70px; background: #ff4444; color: #fff; }
+    #clearChatBtn:hover { background: #ff6666; }
 
     #closeHelp {
         position: fixed;
@@ -257,6 +264,7 @@
     </style>
 </head>
 <body>
+    <button id="clearChatBtn" title="Limpar conversa">🗑️</button>
     <button id="helpBtn">?</button>
  
     <h1>
@@ -308,6 +316,9 @@ const normalChatTab = document.getElementById('normalChatTab');
 const ragChatTab = document.getElementById('ragChatTab');
 let isRagMode = false;
 
+// Conversation history - stores all messages
+let conversationHistory = [];
+
 input.addEventListener('input', function() {
     this.style.height = 'auto';
     const newHeight = Math.min(this.scrollHeight, 150);
@@ -335,6 +346,14 @@ ragChatTab.addEventListener('click', () => {
     normalChatTab.classList.remove('active');
 });
 
+// Clear chat button
+document.getElementById('clearChatBtn').addEventListener('click', () => {
+    if (confirm('Deseja realmente limpar toda a conversa?')) {
+        conversationHistory = [];
+        messagesDiv.innerHTML = '';
+    }
+});
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = input.value.trim();
@@ -343,7 +362,7 @@ form.addEventListener('submit', async (e) => {
     const userMsg = document.createElement('div');
     userMsg.className = 'message user';
     userMsg.setAttribute('data-avatar', 'U');
-    userMsg.innerHTML = `<div>${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+    userMsg.innerHTML = `<div>${escapeHtml(message)}</div>`;
     messagesDiv.appendChild(userMsg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     
@@ -360,15 +379,37 @@ form.addEventListener('submit', async (e) => {
         console.error('Erro ao enviar mensagem:', err);
         const errorMsg = document.createElement('div');
         errorMsg.className = 'message assistant';
-        errorMsg.innerHTML = `<div>Erro ao processar mensagem</div>`;
+        errorMsg.innerHTML = `<div>Erro ao processar mensagem: ${err.message}</div>`;
         messagesDiv.appendChild(errorMsg);
+        
+        // Still add to history even on error so context is preserved
+        conversationHistory.push({
+            role: 'user',
+            content: message
+        });
+        conversationHistory.push({
+            role: 'assistant',
+            content: 'Error: ' + err.message
+        });
     } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = 'Enviar';
     }
 });
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 async function handleStreamingChat(message) {
+    // Add user message to history BEFORE sending
+    conversationHistory.push({
+        role: 'user',
+        content: message
+    });
+
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
     
@@ -385,71 +426,166 @@ async function handleStreamingChat(message) {
 
     const endpoint = isRagMode ? '/api/chat/rag' : '/api/chat';
 
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+    // Prepare request body - send ALL conversation history
+    const requestBody = {
+        message,
+        history: conversationHistory.slice(0, -1) // All messages except the current user message
+    };
+
+    console.log('Sending request:', { 
+        endpoint, 
+        messageCount: conversationHistory.length,
+        historyCount: requestBody.history.length,
+        history: requestBody.history 
     });
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let currentEvent = '';
 
-        for (const line of lines) {
-            if (line.startsWith('event: message')) continue;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
             
-            if (line.startsWith('data: ')) {
-                const chunk = line.slice(6);
+            // Process complete SSE messages (separated by double newlines)
+            const messages = buffer.split('\n\n');
+            buffer = messages.pop() || ''; // Keep incomplete message in buffer
+
+            for (const message of messages) {
+                if (!message.trim()) continue;
                 
-                if (!firstTokenTime) firstTokenTime = Date.now();
-                
-                tokenCount++;
-                
-                if (fullResponse && !fullResponse.endsWith(' ') && !chunk.startsWith(' ')) {
-                    fullResponse += ' ';
+                const lines = message.split('\n');
+                let eventType = 'message';
+                let data = '';
+
+                // Parse SSE format
+                for (const line of lines) {
+                    if (line.startsWith('event:')) {
+                        eventType = line.slice(6).trim();
+                    } else if (line.startsWith('data:')) {
+                        // Don't trim the data - preserve spaces!
+                        const dataContent = line.slice(5);
+                        // Only remove the leading space if it exists (SSE spec adds one space after colon)
+                        data += dataContent.startsWith(' ') ? dataContent.slice(1) : dataContent;
+                    }
                 }
-                fullResponse += chunk;
-                contentSpan.textContent = fullResponse;
-                
-                const elapsed = (Date.now() - firstTokenTime) / 1000;
-                const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
-                const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
-                
-                statsSpan.innerHTML = `
-                    <span>${tokensPerSec} tok/sec</span> • 
-                    <span>${tokenCount} tokens</span> • 
-                    <span>${timeToFirst}s to first token</span>
-                `;
-                
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+                console.log('SSE Event:', eventType, 'Data:', JSON.stringify(data)); // Debug log
+
+                // Handle different event types
+                if (eventType === 'message' && data) {
+                    if (!firstTokenTime) firstTokenTime = Date.now();
+                    
+                    tokenCount++;
+                    fullResponse += data;
+                    
+                    contentSpan.textContent = fullResponse;
+                    
+                    const elapsed = (Date.now() - firstTokenTime) / 1000;
+                    const tokensPerSec = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : '0.00';
+                    const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                    
+                    statsSpan.innerHTML = `
+                        <span>${tokensPerSec} tok/sec</span>
+                        <span>${tokenCount} tokens</span>
+                        <span>${timeToFirst}s to first token</span>
+                    `;
+                    
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } else if (eventType === 'done') {
+                    const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
+                    const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+                    
+                    aiMsg.className = 'message assistant';
+                    contentSpan.textContent = fullResponse;
+                    statsSpan.innerHTML = `
+                        <span>${avgSpeed} tok/sec</span>
+                        <span>${tokenCount} tokens</span>
+                        <span>${timeToFirst}s to first token</span>
+                        <span>Stop reason: EOS Token Found</span>
+                    `;
+
+                    // Add assistant response to history
+                    if (fullResponse) {
+                        conversationHistory.push({
+                            role: 'assistant',
+                            content: fullResponse
+                        });
+                        console.log('Added to history. Total messages:', conversationHistory.length);
+                    }
+                } else if (eventType === 'error') {
+                    throw new Error('Streaming error received from server');
+                }
             }
+        }
+
+        // Process any remaining buffer
+        if (buffer.trim()) {
+            console.log('Remaining buffer:', buffer); // Debug log
+            const lines = buffer.split('\n');
+            let eventType = 'message';
+            let data = '';
+
+            for (const line of lines) {
+                if (line.startsWith('event:')) {
+                    eventType = line.slice(6).trim();
+                } else if (line.startsWith('data:')) {
+                    // Don't trim the data - preserve spaces!
+                    const dataContent = line.slice(5);
+                    data += dataContent.startsWith(' ') ? dataContent.slice(1) : dataContent;
+                }
+            }
+
+            if (data) {
+                fullResponse += data;
+                contentSpan.textContent = fullResponse;
+            }
+        }
+
+        // Ensure the response is added to history even if 'event: done' wasn't received
+        if (fullResponse && !conversationHistory.some(msg => msg.role === 'assistant' && msg.content === fullResponse)) {
+            conversationHistory.push({
+                role: 'assistant',
+                content: fullResponse
+            });
+            console.log('Added to history (fallback). Total messages:', conversationHistory.length);
             
-            if (line.startsWith('event: done')) {
+            // Finalize the message display
+            if (aiMsg.className === 'message streaming') {
                 const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
                 const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
                 
                 aiMsg.className = 'message assistant';
-                contentSpan.textContent = fullResponse;
                 statsSpan.innerHTML = `
-                    <span>${avgSpeed} tok/sec</span> • 
-                    <span>${tokenCount} tokens</span> • 
-                    <span>${timeToFirst}s to first token</span> • 
-                    <span>Stop reason: EOS Token Found</span>
+                    <span>${avgSpeed} tok/sec</span>
+                    <span>${tokenCount} tokens</span>
+                    <span>${timeToFirst}s to first token</span>
+                    <span>Stream completed</span>
                 `;
             }
-            
-            if (line.startsWith('event: error')) {
-                contentSpan.innerHTML = '<span style="color:red;">Erro no streaming</span>';
-            }
         }
+
+        console.log('Full response:', fullResponse);
+        console.log('Complete conversation history:', conversationHistory);
+
+    } catch (error) {
+        console.error('Streaming error:', error);
+        contentSpan.innerHTML = `<span style="color:#ff4444;">Erro no streaming: ${error.message}</span>`;
+        throw error;
     }
 }
 
@@ -470,16 +606,20 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
     const formData = new FormData();
     formData.append("file", file);
 
-    await fetch("/api/rag", { method:"POST", body:formData });
-    
-    const msg = document.createElement('div');
-    msg.className = 'message assistant';
-    msg.innerHTML = `<div>O arquivo "${file.name}" foi enviado!</div>`;
-    messagesDiv.appendChild(msg);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    
-    document.getElementById('uploadBox').style.display = "none";
-    e.target.reset();
+    try {
+        await fetch("/api/rag", { method:"POST", body:formData });
+        
+        const msg = document.createElement('div');
+        msg.className = 'message assistant';
+        msg.innerHTML = `<div>O arquivo "${escapeHtml(file.name)}" foi enviado!</div>`;
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        
+        document.getElementById('uploadBox').style.display = "none";
+        e.target.reset();
+    } catch (error) {
+        alert('Erro ao enviar arquivo: ' + error.message);
+    }
 });
 
 document.getElementById('helpBtn').onclick = () => {
