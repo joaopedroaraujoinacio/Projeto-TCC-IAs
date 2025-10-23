@@ -66,10 +66,29 @@ func initializeSchema(db *sql.DB) error {
 		id INTEGER PRIMARY KEY DEFAULT nextval('sequence_rag_data'),
 		content TEXT NOT NULL,
 		content_name VARCHAR(100),
-		embedding FLOAT[768]
+		embedding FLOAT[768],
+		tokens TEXT,
+		doc_length INTEGER
 	);
-	`
+		
+	CREATE TABLE IF NOT EXISTS bm25_stats (
+		term TEXT PRIMARY KEY,
+		doc_freq INTEGER,
+		total_freq INTEGER
+	);
 
+	CREATE TABLE IF NOT EXISTS corpus_stats (
+		id INTEGER PRIMARY KEY DEFAULT 1,
+		total_docs INTEGER,
+		avg_doc_length FLOAT
+	);
+
+	INSERT INTO corpus_stats (id, total_docs, avg_doc_length)
+	SELECT 1, 0, 0.0
+	WHERE NOT EXISTS (SELECT 1 FROM corpus_stats WHERE id = 1);
+	
+	CREATE INDEX IF NOT EXISTS idx_rag_data_tokens ON rag_data(tokens);
+	`
 	_, err := db.Exec(schema)
 	if err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
