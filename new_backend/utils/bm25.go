@@ -92,7 +92,7 @@ func UpdateBM25Stats(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 	
-	if _, err := tx.Exec("DELETE FROM bm25_stats"); err != nil {
+	if _, err = tx.Exec("DELETE FROM bm25_stats"); err != nil {
 		return fmt.Errorf("failed to clear bm25_stats: %w", err)
 	}
 	
@@ -101,9 +101,9 @@ func UpdateBM25Stats(db *sql.DB) error {
 	err = tx.QueryRow(`
 		SELECT 
 			COUNT(*) as total_docs,
-			COALESCE(AVG(doc_length), 0.0) as avg_doc_length
+			COALESCE(AVG(content_length), 0.0) as avg_content_length
 		FROM rag_data
-		WHERE tokens IS NOT NULL AND doc_length > 0
+		WHERE tokens IS NOT NULL AND content_length > 0
 	`).Scan(&totalDocs, &avgDocLength)
 	if err != nil {
 		return fmt.Errorf("failed to calculate corpus stats: %w", err)
@@ -112,8 +112,7 @@ func UpdateBM25Stats(db *sql.DB) error {
 	_, err = tx.Exec(`
 		UPDATE corpus_stats 
 		SET total_docs = ?, 
-		    avg_doc_length = ?,
-		    last_updated = CURRENT_TIMESTAMP
+		    avg_content_length = ?,
 		WHERE id = 1
 	`, totalDocs, avgDocLength)
 	if err != nil {
@@ -131,7 +130,7 @@ func UpdateBM25Stats(db *sql.DB) error {
 	
 	for rows.Next() {
 		var tokensStr string
-		if err := rows.Scan(&tokensStr); err != nil {
+		if err = rows.Scan(&tokensStr); err != nil {
 			continue
 		}
 		

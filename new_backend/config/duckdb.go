@@ -68,7 +68,7 @@ func initializeSchema(db *sql.DB) error {
 		content_name VARCHAR(100),
 		embedding FLOAT[768],
 		tokens TEXT,
-		doc_length INTEGER
+		content_length INTEGER
 	);
 		
 	CREATE TABLE IF NOT EXISTS bm25_stats (
@@ -80,10 +80,10 @@ func initializeSchema(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS corpus_stats (
 		id INTEGER PRIMARY KEY DEFAULT 1,
 		total_docs INTEGER,
-		avg_doc_length FLOAT
+		avg_content_length FLOAT
 	);
 
-	INSERT INTO corpus_stats (id, total_docs, avg_doc_length)
+	INSERT INTO corpus_stats (id, total_docs, avg_content_length)
 	SELECT 1, 0, 0.0
 	WHERE NOT EXISTS (SELECT 1 FROM corpus_stats WHERE id = 1);
 	
