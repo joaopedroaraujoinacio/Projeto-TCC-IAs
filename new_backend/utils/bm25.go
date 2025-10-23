@@ -155,7 +155,7 @@ func UpdateBM25Stats(db *sql.DB) error {
 			args = append(args, term, docFreq, termTotalFreq[term])
 		}
 		
-		query := fmt.Sprintf("INSERT INTO bm25_stats (term, doc_freq, total_freq) VALUES %s", 
+		query := fmt.Sprintf("INSERT OR REPLACE INTO bm25_stats (term, doc_freq, total_freq) VALUES %s", 
 			strings.Join(values, ","))
 		
 		_, err = tx.Exec(query, args...)

@@ -46,7 +46,7 @@ func (s *ragChatService) RagChatService(db *sql.DB, query string, limit int, req
 		log.Printf("first 5 embedding values: %v", queryEmbedding[:5])
 	}
 
-	results, err := repositories.RagDataSimilaritySearch(db, queryEmbedding, limit)
+	results, err := repositories.RagDataSimilaritySearch(db, request.Message, queryEmbedding, limit, 0.5, 0.5)
 	if err != nil {
 		log.Printf("failed to fetch search query from duckdb: %v", err)
 	}
