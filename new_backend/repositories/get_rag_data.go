@@ -10,53 +10,10 @@ import (
 )
 
 
-// func RagDataSimilaritySearch(db *sql.DB, queryEmbedding []float32, limit int) ([]models.RagData, error) {
-// 	embeddedData := utils.VectorToString(queryEmbedding)
-//
-// 	log.Printf("embedding string first 100 chars: %s", embeddedData[:100])
-//
-// 	query := `
-//     SELECT id, content,
-//            array_cosine_similarity(embedding, CAST(? AS FLOAT[768])) as similarity
-//     FROM rag_data 
-//     ORDER BY similarity DESC
-// 		LIMIT ?
-// `
-// 	log.Printf("Executing search query with embedding length: %d, limit: %d", len(queryEmbedding), limit)
-//
-// 	rows, err := db.Query(query, embeddedData, limit)
-// 	if err != nil {
-// 		log.Printf("search query error: %v", err)
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-//
-// 	var rag_data []models.RagData
-// 		for rows.Next() {
-// 		var data models.RagData
-// 		var similarity float64
-//
-// 		err := rows.Scan(&data.ID, &data.Content, &similarity)
-// 		if err != nil {
-// 			log.Printf("Row scan error: %v", err)
-// 			continue
-// 	}
-//
-// 	log.Printf("found data ID %d with similarity: %.4f", data.ID, similarity)
-// 	rag_data = append(rag_data, data)
-//
-// 	}	
-//
-// 	return rag_data, nil
-// } 
-//
-
 func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32, limit int, bm25Weight float64, vectorWeight float64) ([]models.RagData, error) {
-	// Tokenize the query for BM25
 	tokens := utils.Tokenize(query)
 	log.Printf("Search tokens: %v", tokens)
 	
-	// Get corpus statistics
 	var totalDocs int
 	var avgDocLength float64
 	err := db.QueryRow(`
@@ -68,7 +25,6 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 		return nil, fmt.Errorf("failed to get corpus stats: %w", err)
 	}
 	
-	// Get IDF values for query terms
 	termIDFs := make(map[string]float64)
 	if len(tokens) > 0 {
 		placeholders := make([]string, len(tokens))
@@ -97,11 +53,9 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 		}
 	}
 	
-	// Convert query embedding to string for vector search
 	embeddedData := utils.VectorToString(queryEmbedding)
 	log.Printf("embedding string first 100 chars: %s", embeddedData[:100])
 	
-	// Perform hybrid search
 	searchQuery := `
 		SELECT 
 			id, 
@@ -143,7 +97,6 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 			continue
 		}
 		
-		// Calculate BM25 score
 		docTokens := strings.Fields(tokensStr)
 		bm25Score := 0.0
 		
@@ -159,10 +112,8 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 			}
 		}
 		
-		// Normalize vector score (cosine similarity is already between -1 and 1, convert to 0-1)
 		normalizedVectorScore := (vectorScore + 1.0) / 2.0
 		
-		// Calculate hybrid score
 		hybridScore := (bm25Weight * bm25Score) + (vectorWeight * normalizedVectorScore)
 		
 		log.Printf("Document ID %d - BM25: %.4f, Vector: %.4f, Hybrid: %.4f", 
@@ -180,7 +131,6 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 		})
 	}
 	
-	// Sort by hybrid score (descending)
 	for i := 0; i < len(results); i++ {
 		for j := i + 1; j < len(results); j++ {
 			if results[j].hybridScore > results[i].hybridScore {
@@ -189,7 +139,6 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 		}
 	}
 	
-	// Limit results and extract RagData
 	var ragData []models.RagData
 	for i := 0; i < len(results) && i < limit; i++ {
 		ragData = append(ragData, results[i].data)
@@ -199,3 +148,4 @@ func RagDataSimilaritySearch(db *sql.DB, query string, queryEmbedding []float32,
 	
 	return ragData, nil
 }
+
