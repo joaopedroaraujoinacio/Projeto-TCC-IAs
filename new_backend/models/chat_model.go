@@ -7,7 +7,7 @@ type Message struct {
 
 type ChatRequest struct {
     Message string    `json:"message" binding:"required"`
-    History []Message `json:"history"`  // ADD THIS!
+    History []Message `json:"history"`  
     Model   string    `json:"model,omitempty"`
 }
 
@@ -16,18 +16,16 @@ type ChatResponse struct {
     Model    string `json:"model"`
 }
 
-// Updated for /api/chat endpoint
 type OllamaRequest struct {
     Model    string              `json:"model"`
-    Messages []map[string]string `json:"messages"` // Changed from Prompt
+    Messages []map[string]string `json:"messages"` 
     Stream   bool                `json:"stream"`
 }
 
-// Updated for /api/chat response
 type OllamaResponse struct {
     Message struct {
         Content string `json:"content"`
-    } `json:"message"` // Changed from Response
+    } `json:"message"`
     Done bool `json:"done"`
 }
 
@@ -37,3 +35,4 @@ type StreamChunk struct {
     Done  bool
     Error error
 }
+

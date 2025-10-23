@@ -26,7 +26,6 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 	messageChan := make(chan string, 10)
 	errorChan := make(chan error, 1)
 
-	// Validate message
 	if strings.TrimSpace(request.Message) == "" {
 		errorChan <- fmt.Errorf("message cannot be empty")
 		close(messageChan)
@@ -34,12 +33,10 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 		return messageChan, errorChan
 	}
 
-	// Start streaming
 	go func() {
 		defer close(messageChan)
 		defer close(errorChan)
 
-		// Call repository's SendToLLMStreaming
 		streamChan, err := s.chatRepo.SendToLLM(request)
 		if err != nil {
 			errorChan <- fmt.Errorf("failed to start streaming: %w", err)
@@ -48,7 +45,6 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 
 		buffer := ""
 
-		// Read from repository's channel
 		for chunk := range streamChan {
 			if chunk.Error != nil {
 				errorChan <- chunk.Error
@@ -57,18 +53,16 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 
 			buffer += chunk.Text
 
-			// Envia palavras completas ao handler
 			for {
 				spaceIdx := strings.Index(buffer, " ")
 				if spaceIdx == -1 {
 					break
 				}
-				word := buffer[:spaceIdx+1] // inclui o espaço
+				word := buffer[:spaceIdx+1] 
 				messageChan <- word
 				buffer = buffer[spaceIdx+1:]
 			}
 
-			// Se o chunk indicar fim, envia o que restou
 			if chunk.Done {
 				if buffer != "" {
 					messageChan <- buffer

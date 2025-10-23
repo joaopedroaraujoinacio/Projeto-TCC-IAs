@@ -85,7 +85,7 @@ func (s *ragChatService) RagChatService(db *sql.DB, query string, limit int, req
 				if spaceIdx == -1 {
 					break
 				}
-				word := buffer[:spaceIdx+1] // envia palavra completa
+				word := buffer[:spaceIdx+1] 
 				messageChan <- word
 				buffer = buffer[spaceIdx+1:]
 			}
