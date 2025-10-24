@@ -9,8 +9,6 @@ ollama serve &\n\
 OLLAMA_PID=$!\n\
 echo "Waiting for Ollama to start..."\n\
 sleep 15\n\
-echo "Pulling mxbai-embed-large model..."\n\
-ollama pull mxbai-embed-large\n\
 echo "Pulling nomic-embed-text model..."\n\
 ollama pull nomic-embed-text\n\
 echo "Pulling llama3.2:3b model..."\n\

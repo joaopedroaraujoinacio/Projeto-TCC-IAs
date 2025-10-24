@@ -2,20 +2,20 @@ services:
 
   app:
     build: 
-      context: ./new_backend/
+      context: ./backend/
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     volumes:                         
-    - ./new_backend/templates:/app/templates
-    - ./new_backend/static:/app/static
+    - ./backend/templates:/app/templates
+    - ./backend/static:/app/static
     networks:
       - app_network
     restart: unless-stopped
 
   # ollama:
   #   build:
-  #     context: ./new_backend/
+  #     context: ./backend/
   #     dockerfile: Dockerfile.ollama
   #   networks:
   #     - app_network
@@ -25,7 +25,7 @@ services:
 
   ollama:
       build:
-        context: ./new_backend/
+        context: ./backend/
         dockerfile: Dockerfile.ollama
       networks:
         - app_network

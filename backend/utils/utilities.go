@@ -2,19 +2,23 @@ package utils
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
+	"strconv"
+	"go-project/models"
 )
 
 
-func VectorToString(embedding []float32) string {
-	strValues := make([]string, len(embedding))
-	for i, v := range embedding {
-		strValues[i] = fmt.Sprintf("%f", v)
-	}
-	return "[" + strings.Join(strValues, ",") + "]"
-}
+func VectorToString(vector []float32) string {
+	if len(vector) == 0 {
+		return "[]"
+	} 
 
+	embeddingStr := make([]string, len(vector))
+	for i, v := range vector {
+		embeddingStr[i] = fmt.Sprintf("%f", v)
+	}
+	return "[" + strings.Join(embeddingStr, ",") + "]"
+}
 
 func ParseVectorString(vectorSTR string) []float32 {
 	vectorSTR = strings.Trim(vectorSTR, "[]")
@@ -33,3 +37,19 @@ func ParseVectorString(vectorSTR string) []float32 {
 
 	return embedding
 }
+
+func FormatContext(ragData []models.RagData) string {
+    if len(ragData) == 0 {
+        return "No relevant context found."
+    }
+    
+    var contextBuilder strings.Builder
+    contextBuilder.WriteString("Relevant information:\n")
+    
+    for i, data := range ragData {
+        contextBuilder.WriteString(fmt.Sprintf("%d. %s\n", i+1, data.Content))
+    }
+    
+    return contextBuilder.String()
+}
+
