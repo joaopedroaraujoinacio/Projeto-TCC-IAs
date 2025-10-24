@@ -10,7 +10,7 @@ import (
 
 
 type WebSearchService interface {
-	WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, error)
+	WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <-chan error)
 }
 
 type webSearchService struct {
@@ -25,9 +25,14 @@ func NewWebSearchService(searchRepo utils.WebSearchRepository, chatRepo reposito
 	}
 }
 
-func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, error) {
+func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <- chan error) {
 	if strings.TrimSpace(request.Query) == "" {
-		return nil, fmt.Errorf("search query cannot be empty")
+		errorChan := make(chan error, 1)
+		messageChan := make(chan string)
+		errorChan <- fmt.Errorf("search query cannot be empty")
+		close(errorChan)
+		close(messageChan)
+		return nil, messageChan, errorChan
 	}
 
 	maxSources := request.MaxSources
@@ -37,16 +42,27 @@ func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest
 
 	sources, err := s.searchRepo.SearchDuckDuckGo(request.Query, maxSources)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search DuckDuckGo: %w", err)
+		errorChan := make(chan error, 1)
+		messageChan := make(chan string)
+		errorChan <- fmt.Errorf("failed to search DuckDuckGo: %w", err)
+		close(errorChan)
+		close(messageChan)
+		return nil, messageChan, errorChan
 	}
 
 	if len(sources) == 0 {
-		return &models.WebSearchResponse{
+		response := &models.WebSearchResponse{
 			Query:     request.Query,
 			AISummary: "No results found for your query.",
 			Sources:   []models.SearchSource{},
 			Count:     0,
-		}, nil
+		}
+		errorChan := make(chan error, 1)
+		messageChan := make(chan string, 1)
+		messageChan <- "No results found for your query"
+		close(errorChan)
+		close(messageChan)
+		return response, messageChan, errorChan
 	}
 
 	for i := range sources {
@@ -57,24 +73,28 @@ func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest
 		}
 	}
 
-	aiSummary, err := s.generateAISummary(request.Query, sources)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate AI summary: %w", err)
-	}
+	messageChan, errorChan := s.generateAISummary(request.Query, sources)
 
+	cleanSources := make([]models.SearchSource, len(sources))
 	for i := range sources {
-		sources[i].Content = ""
+		cleanSources[i] = sources[i]
+		cleanSources[i].Content = ""
 	}
 
-	return &models.WebSearchResponse{
+	response := &models.WebSearchResponse{
 		Query:     request.Query,
-		AISummary: aiSummary,
+		AISummary: "",
 		Sources:   sources,
 		Count:     len(sources),
-	}, nil
+	}
+	return response, messageChan, errorChan
 }
 
-func (s *webSearchService) generateAISummary(query string, sources []models.SearchSource) (string, error) {
+func (s *webSearchService) generateAISummary(query string, sources []models.SearchSource) (<-chan string, <-chan error) {
+	messageChan := make(chan string, 10)
+	errorChan := make(chan error, 1)
+
+
 	context := fmt.Sprintf("Based on the following search results, provide a comprehensive answer to the query: '%s'\n\n", query)
 	
 	for i, source := range sources {
@@ -85,14 +105,47 @@ func (s *webSearchService) generateAISummary(query string, sources []models.Sear
 
 	chatRequest := &models.ChatRequest{
 		Message: context,
-		Model:   "llama3.2:3b",
+		// Model:   "llama3.2:3b",
 	}
 
-	response, err := s.chatRepo.SendToLLM(chatRequest)
-	if err != nil {
-		return "", fmt.Errorf("failed to get LLM summary: %w", err)
-	}
+	go func() {
+		defer close(messageChan)
+		defer close(errorChan)
+	
+		streamChan, err := s.chatRepo.SendToLLM(chatRequest)
+		if err != nil {
+			errorChan <- fmt.Errorf("failed to start streaming: %w", err)
+			return 
+		}
 
-	return response.Response, nil
+		buffer := ""
+
+		for chunk := range streamChan {
+			if chunk.Error != nil {
+				errorChan <- chunk.Error
+				return
+			}
+			
+			buffer += chunk.Text
+
+			for {
+				spaceIdx := strings.Index(buffer, " ")
+				if spaceIdx == -1 {
+					break
+				}
+				word := buffer[:spaceIdx+1] 
+				messageChan <- word
+				buffer = buffer[spaceIdx+1:]
+				}
+			if chunk.Done {
+				if buffer != "" {
+					messageChan <- buffer
+				}
+				return
+			}
+		}
+	}()
+
+	return messageChan, errorChan
 }
 
