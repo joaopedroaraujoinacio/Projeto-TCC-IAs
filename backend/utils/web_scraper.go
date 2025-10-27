@@ -16,7 +16,7 @@ import (
 )
 
 type WebSearchRepository interface {
-	SearchDuckDuckGo(query string, maxSources int) ([]models.SearchSource, error)
+	SearchSearxng(query string, maxSources int) ([]models.SearchSource, error)
 	ScrapeContent(url string) (string, error)
 }
 
@@ -50,7 +50,7 @@ type SearXNGResult struct {
 	Content string `json:"content"`
 }
 
-func (r *webSearchRepository) SearchDuckDuckGo(query string, maxSources int) ([]models.SearchSource, error) {
+func (r *webSearchRepository) SearchSearxng(query string, maxSources int) ([]models.SearchSource, error) {
 	fmt.Printf("DEBUG: Received query: '%s', maxSources: %d\n", query, maxSources)
 
 	if maxSources <= 0 {
@@ -82,7 +82,6 @@ func (r *webSearchRepository) SearchDuckDuckGo(query string, maxSources int) ([]
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// CRITICAL DEBUG LINE
 	fmt.Printf("DEBUG: Response body length: %d, content: %s\n", len(body), string(body))
 
 	if resp.StatusCode != http.StatusOK {
@@ -134,7 +133,6 @@ func (r *webSearchRepository) SearchDuckDuckGo(query string, maxSources int) ([]
 	fmt.Printf("DEBUG: Returning %d sources\n", len(sources))
 	return sources, nil
 }
-
 
 func (r *webSearchRepository) ScrapeContent(url string) (string, error) {
 	req, err := http.NewRequest("GET", url, nil)
@@ -215,9 +213,3 @@ func (r *webSearchRepository) cleanHTML(html string) string {
 	return strings.TrimSpace(text)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

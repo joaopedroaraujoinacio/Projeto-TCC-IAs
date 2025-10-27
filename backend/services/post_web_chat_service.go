@@ -40,7 +40,7 @@ func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest
 		maxSources = 3
 	}
 
-	sources, err := s.searchRepo.SearchDuckDuckGo(request.Query, maxSources)
+	sources, err := s.searchRepo.SearchSearxng(request.Query, maxSources)
 	if err != nil {
 		errorChan := make(chan error, 1)
 		messageChan := make(chan string)
