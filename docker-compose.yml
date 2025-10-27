@@ -9,39 +9,64 @@ services:
     volumes:                         
     - ./backend/templates:/app/templates
     - ./backend/static:/app/static
+    environment:
+    - SEARXNG_URL=http://searxng-rag:8080
+    depends_on:
+    - searxng-rag
+    - redis
     networks:
       - app_network
     restart: unless-stopped
 
-  # ollama:
-  #   build:
-  #     context: ./backend/
-  #     dockerfile: Dockerfile.ollama
-  #   networks:
-  #     - app_network
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-
   ollama:
-      build:
-        context: ./backend/
-        dockerfile: Dockerfile.ollama
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile.ollama
+    networks:
+      - app_network
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # ollama:
+  #     build:
+  #       context: ./backend/
+  #       dockerfile: Dockerfile.ollama
+  #     networks:
+  #       - app_network
+  #     restart: unless-stopped
+  #     volumes:
+  #       - ollama_data:/root/.ollama
+  #     deploy:
+  #       resources:
+  #         reservations:
+  #           devices:
+  #             - driver: nvidia
+  #               count: all  
+  #               capabilities: [gpu]
+  #     environment:
+  #       - NVIDIA_VISIBLE_DEVICES=all
+  #       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+
+  searxng-rag:
+      image: searxng/searxng:latest
+      container_name: searxng-rag
+      restart: unless-stopped
       networks:
         - app_network
-      restart: unless-stopped
-      volumes:
-        - ollama_data:/root/.ollama
-      deploy:
-        resources:
-          reservations:
-            devices:
-              - driver: nvidia
-                count: all  
-                capabilities: [gpu]
       environment:
-        - NVIDIA_VISIBLE_DEVICES=all
-        - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+        - SEARXNG_SECRET=change-this-to-any-random-string
+      volumes:
+        - ./searxng-settings.yml:/etc/searxng/settings.yml:ro
+
+  redis:
+    image: redis:alpine
+    container_name: searxng-redis
+    command: redis-server --save 30 1 --loglevel warning
+    restart: unless-stopped
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
