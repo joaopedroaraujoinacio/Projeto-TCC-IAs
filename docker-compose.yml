@@ -1,5 +1,4 @@
 services:
-
   app:
     build: 
       context: ./backend/
@@ -18,36 +17,53 @@ services:
       - app_network
     restart: unless-stopped
 
-  # ollama:
-  #   build:
-  #     context: ./backend/
-  #     dockerfile: Dockerfile.ollama
-  #   networks:
-  #     - app_network
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-
   ollama:
-      build:
-        context: ./backend/
-        dockerfile: Dockerfile.ollama
-      networks:
-        - app_network
-      restart: unless-stopped
-      volumes:
-        - ollama_data:/root/.ollama
+    image: ollama/ollama:latest
+    networks:
+      - app_network
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
       deploy:
         resources:
           reservations:
             devices:
               - driver: nvidia
-                count: all  
+                count: all
                 capabilities: [gpu]
-      environment:
-        - NVIDIA_VISIBLE_DEVICES=all
-        - NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
+  ollama-setup:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - app_network
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Checking if models are already installed..."
+        if ollama list | grep -q "nomic-embed-text" && ollama list | grep -q "llama3.2:3b"; then
+          echo "Models already installed, skipping..."
+          exit 0
+        fi
+        echo "Installing models (this may take a few minutes on first run)..."
+        ollama pull nomic-embed-text
+        ollama pull llama3.2:3b
+        echo "✓ Models ready!"
+    restart: "no"
 
   searxng-rag:
       image: searxng/searxng:latest
