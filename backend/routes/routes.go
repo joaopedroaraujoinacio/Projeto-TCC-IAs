@@ -14,17 +14,13 @@ import (
 func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	chatRepo := repositories.NewChatRepository("http://ollama:11434")
-	chatService := services.NewChatService(chatRepo)
-	chatHandler := handlers.NewChatHandler(chatService)
-
-	ragChatService := services.NewRagChatService(chatRepo)
-	ragChatHandler := handlers.NewRagChatHandler(ragChatService, db)
-
-
 	searchRepo := utils.NewWebSearchRepository()
-	webSearchService := services.NewWebSearchService(searchRepo, chatRepo)
-	webSearchHandler := handlers.NewWebSearchHandler(webSearchService)
 
+	chatService := services.NewChatService(chatRepo, searchRepo)
+	
+	chatHandler := handlers.NewChatHandler(chatService)
+	ragChatHandler := handlers.NewRagChatHandler(chatService, db)
+	webSearchHandler := handlers.NewWebSearchHandler(chatService)
 
 	getAllRagData := func(c *gin.Context) {
 		handlers.GetAllRagData(db, c)

@@ -11,11 +11,11 @@ import (
 
 
 type RagChatHandler struct {
-	ragChatService services.RagChatService
+	ragChatService services.ChatService
 	db             *sql.DB
 }
 
-func NewRagChatHandler(ragChatService services.RagChatService, db *sql.DB) *RagChatHandler {
+func NewRagChatHandler(ragChatService services.ChatService, db *sql.DB) *RagChatHandler {
 	return &RagChatHandler{
 		ragChatService: ragChatService,
 		db:             db,
@@ -35,7 +35,7 @@ func (h *RagChatHandler) RagChat(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
 
-	messageChan, errorChan := h.ragChatService.RagChatService(h.db, request.Message, 1, &request)
+	messageChan, errorChan := h.ragChatService.RagChat(h.db, request.Message, 1, &request)
 
 	c.Stream(func(w io.Writer) bool {
 		select {

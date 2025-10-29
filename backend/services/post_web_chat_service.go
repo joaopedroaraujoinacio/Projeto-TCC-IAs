@@ -3,29 +3,11 @@ package services
 import (
 	"fmt"
 	"go-project/models"
-	"go-project/repositories"
-	"go-project/utils"
 	"strings"
 )
 
 
-type WebSearchService interface {
-	WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <-chan error)
-}
-
-type webSearchService struct {
-	searchRepo utils.WebSearchRepository
-	chatRepo   repositories.ChatRepository 
-}
-
-func NewWebSearchService(searchRepo utils.WebSearchRepository, chatRepo repositories.ChatRepository) WebSearchService {
-	return &webSearchService{
-		searchRepo: searchRepo,
-		chatRepo:   chatRepo,
-	}
-}
-
-func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <- chan error) {
+func (s *chatService) WebSearchChat(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <- chan error) {
 	if strings.TrimSpace(request.Query) == "" {
 		errorChan := make(chan error, 1)
 		messageChan := make(chan string)
@@ -90,7 +72,7 @@ func (s *webSearchService) WebSearchChatService(request *models.WebSearchRequest
 	return response, messageChan, errorChan
 }
 
-func (s *webSearchService) generateAISummary(query string, sources []models.SearchSource) (<-chan string, <-chan error) {
+func (s *chatService) generateAISummary(query string, sources []models.SearchSource) (<-chan string, <-chan error) {
 	messageChan := make(chan string, 10)
 	errorChan := make(chan error, 1)
 

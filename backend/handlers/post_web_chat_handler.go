@@ -12,10 +12,10 @@ import (
 
 
 type WebSearchHandler struct {
-	webSearchService services.WebSearchService
+	webSearchService services.ChatService
 }
 
-func NewWebSearchHandler(webSearchService services.WebSearchService) *WebSearchHandler {
+func NewWebSearchHandler(webSearchService services.ChatService) *WebSearchHandler {
 	return &WebSearchHandler{
 		webSearchService: webSearchService,
 	}
@@ -34,7 +34,7 @@ func (h *WebSearchHandler) WebSearchChat(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
 
-	response, messageChan, errorChan := h.webSearchService.WebSearchChatService(&request)
+	response, messageChan, errorChan := h.webSearchService.WebSearchChat(&request)
 
 	if response != nil {
 		log.Printf("Using %d sources:", response.Count)

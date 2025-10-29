@@ -10,21 +10,8 @@ import (
 	"go-project/repositories"
 )
 
-type RagChatService interface {
-	RagChatService(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error)
-}
 
-type ragChatService struct {
-    chatRepo repositories.ChatRepository
-}
-
-func NewRagChatService(chatRepo repositories.ChatRepository) RagChatService {
-    return &ragChatService{
-        chatRepo: chatRepo,
-    }
-}
-
-func (s *ragChatService) RagChatService(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error) {
+func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error) {
 	messageChan := make(chan string, 10)
 	errorChan := make(chan error, 1)
 

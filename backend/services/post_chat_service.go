@@ -2,25 +2,10 @@ package services
 
 import (
 	"fmt"
-	"strings"
 	"go-project/models"
-	"go-project/repositories"
+	"strings"
 )
 
-
-type ChatService interface {
-	StreamChat(request *models.ChatRequest) (<-chan string, <-chan error)
-}
-
-type chatService struct {
-	chatRepo repositories.ChatRepository
-}
-
-func NewChatService(chatRepo repositories.ChatRepository) ChatService {
-	return &chatService{
-		chatRepo: chatRepo,
-	}
-}
 
 func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-chan error) {
 	messageChan := make(chan string, 10)
