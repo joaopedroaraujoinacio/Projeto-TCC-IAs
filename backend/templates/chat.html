@@ -107,6 +107,36 @@
     }
     .streaming > div { border-left: 3px solid #ffde21; }
 
+    .sources-section {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #2a2f45;
+    }
+
+    .sources-title {
+        font-size: 12px;
+        color: #ffde21;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .source-item {
+        font-size: 11px;
+        color: #a0a5b8;
+        margin-bottom: 6px;
+        padding-left: 12px;
+        border-left: 2px solid #2a2f45;
+    }
+
+    .source-item a {
+        color: #7db3ff;
+        text-decoration: none;
+    }
+
+    .source-item a:hover {
+        text-decoration: underline;
+    }
+
     .token-stats {
         font-size: 11px;
         color: #999;
@@ -291,8 +321,8 @@
     </h1>
 
     <div class="tabs-container">
-        <button class="tab-btn active" id="normalChatTab">Chat Normal</button>
-        <button class="tab-btn" id="ragChatTab">RAG Chat</button>
+        <button class="tab-btn" id="ragChatTab">RAG</button>
+        <button class="tab-btn" id="webSearchTab">Web Search</button>
     </div>
 
     <div id="messages"></div>
@@ -319,8 +349,9 @@
         <p>O chat FAROL permite conversar com uma IA capaz de responder perguntas e analisar contextos.</p>
         <p>Construído para operar de forma totalmente local, o sistema garante a privacidade e a autonomia no processamento de informações.</p>
         <ul>
-            <li>Use o <strong>Chat Normal</strong> para perguntas gerais.</li>
-            <li>Envie um anexo e use o <strong>RAG Chat</strong> para consultar documentos enviados.</li>
+            <li>Use o <strong>Chat Normal</strong> (padrão) para perguntas gerais.</li>
+            <li>Use o <strong>RAG</strong> para consultar documentos enviados.</li>
+            <li>Use o <strong>Web Search</strong> para buscar informações na internet.</li>
         </ul>
         <p>Dê o próximo passo: Experimente fazer uma consulta ou utilize o botão "Anexar" para enviar um documento e testar o poder da pesquisa contextual (RAG) em seu ambiente local!</p>
         <button id="closeHelp">X</button>
@@ -331,11 +362,11 @@ const form = document.getElementById('chatForm');
 const input = document.getElementById('messageInput');
 const messagesDiv = document.getElementById('messages');
 const sendBtn = document.getElementById('sendBtn');
-const normalChatTab = document.getElementById('normalChatTab');
 const ragChatTab = document.getElementById('ragChatTab');
-let isRagMode = false;
+const webSearchTab = document.getElementById('webSearchTab');
 
-// Conversation history - stores all messages
+let chatMode = 'normal';
+
 let conversationHistory = [];
 
 input.addEventListener('input', function() {
@@ -345,7 +376,6 @@ input.addEventListener('input', function() {
     this.style.overflowY = newHeight >= 150 ? 'auto' : 'hidden';
 });
 
-// Enter to send
 input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -353,19 +383,28 @@ input.addEventListener('keydown', function(e) {
     }
 });
 
-normalChatTab.addEventListener('click', () => {
-    isRagMode = false;
-    normalChatTab.classList.add('active');
-    ragChatTab.classList.remove('active');
-});
-
 ragChatTab.addEventListener('click', () => {
-    isRagMode = true;
-    ragChatTab.classList.add('active');
-    normalChatTab.classList.remove('active');
+    if (chatMode === 'rag') {
+        chatMode = 'normal';
+        ragChatTab.classList.remove('active');
+    } else {
+        chatMode = 'rag';
+        ragChatTab.classList.add('active');
+        webSearchTab.classList.remove('active');
+    }
 });
 
-// Clear chat button
+webSearchTab.addEventListener('click', () => {
+    if (chatMode === 'websearch') {
+        chatMode = 'normal';
+        webSearchTab.classList.remove('active');
+    } else {
+        chatMode = 'websearch';
+        webSearchTab.classList.add('active');
+        ragChatTab.classList.remove('active');
+    }
+});
+
 document.getElementById('clearChatBtn').addEventListener('click', () => {
     if (confirm('Deseja realmente limpar toda a conversa?')) {
         conversationHistory = [];
@@ -401,7 +440,6 @@ form.addEventListener('submit', async (e) => {
         errorMsg.innerHTML = `<div>Erro ao processar mensagem: ${err.message}</div>`;
         messagesDiv.appendChild(errorMsg);
         
-        // Still add to history even on error so context is preserved
         conversationHistory.push({
             role: 'user',
             content: message
@@ -423,7 +461,6 @@ function escapeHtml(text) {
 }
 
 async function handleStreamingChat(message) {
-    // Add user message to history BEFORE sending
     conversationHistory.push({
         role: 'user',
         content: message
@@ -432,30 +469,46 @@ async function handleStreamingChat(message) {
     const aiMsg = document.createElement('div');
     aiMsg.className = 'message streaming';
     
-    aiMsg.innerHTML = `<div><span class="streaming-content"></span><div class="token-stats streaming-stats"></div></div>`;
+    aiMsg.innerHTML = `<div><span class="streaming-content"></span><div class="sources-section" style="display:none;"></div><div class="token-stats streaming-stats"></div></div>`;
     messagesDiv.appendChild(aiMsg);
 
     const contentSpan = aiMsg.querySelector('.streaming-content');
+    const sourcesSection = aiMsg.querySelector('.sources-section');
     const statsSpan = aiMsg.querySelector('.streaming-stats');
 
     let fullResponse = '';
+    let sources = [];
     let tokenCount = 0;
     let startTime = Date.now();
     let firstTokenTime = null;
 
-    const endpoint = isRagMode ? '/api/chat/rag' : '/api/chat';
-
-    // Prepare request body - send ALL conversation history
-    const requestBody = {
-        message,
-        history: conversationHistory.slice(0, -1) // All messages except the current user message
-    };
+    let endpoint;
+    let requestBody;
+    
+    if (chatMode === 'rag') {
+        endpoint = '/api/chat/rag';
+        requestBody = {
+            message,
+            history: conversationHistory.slice(0, -1)
+        };
+    } else if (chatMode === 'websearch') {
+        endpoint = '/api/chat/web-search';
+        requestBody = {
+            query: message
+        };
+    } else {
+        endpoint = '/api/chat';
+        requestBody = {
+            message,
+            history: conversationHistory.slice(0, -1)
+        };
+    }
 
     console.log('Sending request:', { 
         endpoint, 
+        chatMode,
         messageCount: conversationHistory.length,
-        historyCount: requestBody.history.length,
-        history: requestBody.history 
+        requestBody: requestBody  
     });
 
     try {
@@ -472,7 +525,6 @@ async function handleStreamingChat(message) {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        let currentEvent = '';
 
         while (true) {
             const { done, value } = await reader.read();
@@ -480,9 +532,8 @@ async function handleStreamingChat(message) {
 
             buffer += decoder.decode(value, { stream: true });
             
-            // Process complete SSE messages (separated by double newlines)
             const messages = buffer.split('\n\n');
-            buffer = messages.pop() || ''; // Keep incomplete message in buffer
+            buffer = messages.pop() || ''; 
 
             for (const message of messages) {
                 if (!message.trim()) continue;
@@ -491,21 +542,17 @@ async function handleStreamingChat(message) {
                 let eventType = 'message';
                 let data = '';
 
-                // Parse SSE format
                 for (const line of lines) {
                     if (line.startsWith('event:')) {
                         eventType = line.slice(6).trim();
                     } else if (line.startsWith('data:')) {
-                        // Don't trim the data - preserve spaces!
                         const dataContent = line.slice(5);
-                        // Only remove the leading space if it exists (SSE spec adds one space after colon)
                         data += dataContent.startsWith(' ') ? dataContent.slice(1) : dataContent;
                     }
                 }
 
-                console.log('SSE Event:', eventType, 'Data:', JSON.stringify(data)); // Debug log
+                console.log('SSE Event:', eventType, 'Data:', JSON.stringify(data)); 
 
-                // Handle different event types
                 if (eventType === 'message' && data) {
                     if (!firstTokenTime) firstTokenTime = Date.now();
                     
@@ -525,6 +572,27 @@ async function handleStreamingChat(message) {
                     `;
                     
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } else if (eventType === 'sources' && data) {
+                    try {
+                        sources = JSON.parse(data);
+                        console.log('Received sources:', sources);
+                        
+                        if (sources && sources.length > 0) {
+                            let sourcesHtml = '<div class="sources-title">📚 Fontes:</div>';
+                            sources.forEach((source, idx) => {
+                                sourcesHtml += `
+                                    <div class="source-item">
+                                        <strong>[${idx + 1}]</strong> 
+                                        <a href="${escapeHtml(source.url)}" target="_blank">${escapeHtml(source.title || source.url)}</a>
+                                    </div>
+                                `;
+                            });
+                            sourcesSection.innerHTML = sourcesHtml;
+                            sourcesSection.style.display = 'block';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing sources:', e);
+                    }
                 } else if (eventType === 'done') {
                     const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
                     const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
@@ -538,7 +606,6 @@ async function handleStreamingChat(message) {
                         <span>Stop reason: EOS Token Found</span>
                     `;
 
-                    // Add assistant response to history
                     if (fullResponse) {
                         conversationHistory.push({
                             role: 'assistant',
@@ -552,9 +619,8 @@ async function handleStreamingChat(message) {
             }
         }
 
-        // Process any remaining buffer
         if (buffer.trim()) {
-            console.log('Remaining buffer:', buffer); // Debug log
+            console.log('Remaining buffer:', buffer); 
             const lines = buffer.split('\n');
             let eventType = 'message';
             let data = '';
@@ -563,7 +629,6 @@ async function handleStreamingChat(message) {
                 if (line.startsWith('event:')) {
                     eventType = line.slice(6).trim();
                 } else if (line.startsWith('data:')) {
-                    // Don't trim the data - preserve spaces!
                     const dataContent = line.slice(5);
                     data += dataContent.startsWith(' ') ? dataContent.slice(1) : dataContent;
                 }
@@ -575,7 +640,6 @@ async function handleStreamingChat(message) {
             }
         }
 
-        // Ensure the response is added to history even if 'event: done' wasn't received
         if (fullResponse && !conversationHistory.some(msg => msg.role === 'assistant' && msg.content === fullResponse)) {
             conversationHistory.push({
                 role: 'assistant',
@@ -583,7 +647,6 @@ async function handleStreamingChat(message) {
             });
             console.log('Added to history (fallback). Total messages:', conversationHistory.length);
             
-            // Finalize the message display
             if (aiMsg.className === 'message streaming') {
                 const avgSpeed = firstTokenTime ? ((tokenCount / ((Date.now() - firstTokenTime) / 1000))).toFixed(2) : '0.00';
                 const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
@@ -599,6 +662,7 @@ async function handleStreamingChat(message) {
         }
 
         console.log('Full response:', fullResponse);
+        console.log('Sources:', sources);
         console.log('Complete conversation history:', conversationHistory);
 
     } catch (error) {
