@@ -4,20 +4,9 @@ import (
 	"io"
 	"net/http"
 	"go-project/models"
-	"go-project/services"
 	"github.com/gin-gonic/gin"
 )
 
-
-type ChatHandler struct {
-	chatService services.ChatService
-}
-
-func NewChatHandler(chatService services.ChatService) *ChatHandler {
-	return &ChatHandler{
-		chatService: chatService,
-	}
-}
 
 func (h *ChatHandler) StreamChat(c *gin.Context) {
 	var request models.ChatRequest
@@ -55,3 +44,4 @@ func (h *ChatHandler) StreamChat(c *gin.Context) {
 		}
 	})
 }
+

@@ -2,26 +2,14 @@ package handlers
 
 import (
 	"go-project/models"
-	"go-project/services"
 	"io"
 	"log"
 	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
 
-type WebSearchHandler struct {
-	webSearchService services.ChatService
-}
-
-func NewWebSearchHandler(webSearchService services.ChatService) *WebSearchHandler {
-	return &WebSearchHandler{
-		webSearchService: webSearchService,
-	}
-}
-
-func (h *WebSearchHandler) WebSearchChat(c *gin.Context) {
+func (h *ChatHandler) WebSearchChat(c *gin.Context) {
 	var request models.WebSearchRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -34,7 +22,7 @@ func (h *WebSearchHandler) WebSearchChat(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
 
-	response, messageChan, errorChan := h.webSearchService.WebSearchChat(&request)
+	response, messageChan, errorChan := h.chatService.WebSearchChat(&request)
 
 	if response != nil {
 		log.Printf("Using %d sources:", response.Count)

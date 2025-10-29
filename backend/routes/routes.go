@@ -15,12 +15,8 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	chatRepo := repositories.NewChatRepository("http://ollama:11434")
 	searchRepo := utils.NewWebSearchRepository()
-
 	chatService := services.NewChatService(chatRepo, searchRepo)
-	
-	chatHandler := handlers.NewChatHandler(chatService)
-	ragChatHandler := handlers.NewRagChatHandler(chatService, db)
-	webSearchHandler := handlers.NewWebSearchHandler(chatService)
+	chatHandler := handlers.NewChatHandler(chatService, db)
 
 	getAllRagData := func(c *gin.Context) {
 		handlers.GetAllRagData(db, c)
@@ -29,12 +25,11 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	api := r.Group("/api") 
 	{
 		api.POST("/chat", chatHandler.StreamChat)
-		api.POST("/chat/rag", ragChatHandler.RagChat)
+		api.POST("/chat/rag", chatHandler.RagChat)
 		api.POST("/rag", handlers.CreateRagData(db))
-		api.POST("/chat/web-search", webSearchHandler.WebSearchChat)
+		api.POST("/chat/web-search", chatHandler.WebSearchChat)
 		api.GET("/rag/search", handlers.SearchSimilarRagData(db))
 		api.GET("/rag/get_all_data", getAllRagData)
-		
 	}
 
 		r.StaticFile("/chat", "./templates/chat.html")
