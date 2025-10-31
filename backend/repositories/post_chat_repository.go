@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"fmt"
-	"time"
 	"bufio"
 	"bytes"
 	"net/http"
@@ -10,23 +9,6 @@ import (
 	"go-project/models"
 )
 
-type ChatRepository interface {
-    SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error)
-}
-
-func NewChatRepository(ollamaURL string) ChatRepository {
-    return &chatRepository{
-        ollamaURL: ollamaURL,
-        client: &http.Client{
-            Timeout: 500 * time.Second,
-        },
-    }
-}
-
-type chatRepository struct {
-    ollamaURL string
-    client    *http.Client
-}
 
 func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error) {
     model := request.Model
