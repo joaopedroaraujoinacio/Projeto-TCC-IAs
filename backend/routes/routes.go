@@ -18,6 +18,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	chatHandler := handlers.NewChatHandler(chatService, db)
 
 	signupHandler := handlers.Signup(db)
+	loginHandler := handlers.Login(db)
 
 	getAllRagData := func(c *gin.Context) {
 		handlers.GetAllRagData(db, c)
@@ -25,7 +26,8 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 
 	api := r.Group("/api") 
 	{
-		api.POST("signup", signupHandler)
+		api.POST("/signup", signupHandler)
+		api.POST("/login", loginHandler)
 		api.POST("/chat", chatHandler.StreamChat)
 		api.POST("/chat/rag", chatHandler.RagChat)
 		api.POST("/rag", handlers.CreateRagData(db))

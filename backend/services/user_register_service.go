@@ -1,7 +1,7 @@
 package services
 
 import (
-	// "errors"
+	"errors"
 	"database/sql"
 	"go-project/utils"
 )
@@ -38,22 +38,22 @@ func (u *User) Save(db *sql.DB) error {
 	return err
 }
 
-// func (u *User) ValidateCredentials() error {
-// 	query := "SELECT id, password FROM users WHERE email = ?"
-// 	row := db.DB.QueryRow(query, u.Email)
-//
-// 	var retreivedPassword string
-// 	err := row.Scan(&u.ID, &retreivedPassword)
-// 	if err != nil {
-// 		return errors.New("error when retrieving user data")
-// 	}
-//
-// 	passwordIsValid := utils.CheckPasswordHash(u.Password, retreivedPassword)
-//
-// 	if !passwordIsValid {
-// 		return errors.New("passwords dont match")
-// 	}
-//
-// 	return nil
-// }
-//
+func (u *User) ValidateCredentials(db *sql.DB) error {
+	query := "SELECT id, password FROM users WHERE email = ?"
+	row := db.QueryRow(query, u.Email)
+
+	var retreivedPassword string
+	err := row.Scan(&u.ID, &retreivedPassword)
+	if err != nil {
+		return errors.New("error when retrieving user data")
+	}
+
+	passwordIsValid := utils.CheckPasswordHash(u.Password, retreivedPassword)
+
+	if !passwordIsValid {
+		return errors.New("passwords dont match")
+	}
+
+	return nil
+}
+
