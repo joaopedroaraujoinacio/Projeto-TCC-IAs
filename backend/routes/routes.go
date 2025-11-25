@@ -2,10 +2,12 @@ package routes
 
 import (
 	"database/sql"
-	"go-project/utils"
 	"go-project/handlers"
-	"go-project/services"
+	"go-project/middleware"
 	"go-project/repositories"
+	"go-project/services"
+	"go-project/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,7 +30,7 @@ func SetupRoutes(r *gin.Engine, db *sql.DB) {
 	{
 		api.POST("/signup", signupHandler)
 		api.POST("/login", loginHandler)
-		api.POST("/chat", chatHandler.StreamChat)
+		api.POST("/chat", middleware.Authenticate, chatHandler.StreamChat)
 		api.POST("/chat/rag", chatHandler.RagChat)
 		api.POST("/rag", handlers.CreateRagData(db))
 		api.POST("/chat/web-search", chatHandler.WebSearchChat)
