@@ -6,7 +6,7 @@ type Message struct {
 }
 
 type ChatRequest struct {
-    Message string    `json:"message" binding:"required"`
+		Message string `json:"message" example:"can you talk a little bit about my grandfather story?"`
     History []Message `json:"history"`  
     Model   string    `json:"model,omitempty"`
 }

@@ -10,7 +10,16 @@ import (
 	"go-project/repositories"
 )
 
-
+// RagChat godoc
+// @Summary      Send a message using RAG context
+// @Tags         Chat
+// @Accept       json
+// @Produce      json
+// @Param        request body object true "Chat message" SchemaExample({"message": "can you talk a little bit about my grandfather story?"})
+// @Success      200 {object} map[string]string "RAG chat response"
+// @Failure      400 {object} map[string]string "Invalid request"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/chat/rag [post]
 func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error) {
 	messageChan := make(chan string, 10)
 	errorChan := make(chan error, 1)

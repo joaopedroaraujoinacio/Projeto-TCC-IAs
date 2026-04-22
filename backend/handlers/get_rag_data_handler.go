@@ -9,7 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
+// SearchSimilarRagData godoc
+// @Summary      Search for similar RAG data
+// @Tags         Rag
+// @Accept       json
+// @Produce      json
+// @Param        q query string true "Search query"
+// @Success      200 {object} map[string]interface{} "Similar data found"
+// @Failure      400 {object} map[string]string "Invalid request"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/rag/search [get]
 func SearchSimilarRagData(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		query := c.Query("q")

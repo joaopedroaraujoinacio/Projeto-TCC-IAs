@@ -8,7 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
+// WebSearchChat godoc
+// @Summary      Send a message with web search context
+// @Tags         Chat
+// @Accept       json
+// @Produce      json
+// @Param        request body object true "Chat message" SchemaExample({"message": "can you talk a little bit about my grandfather story?"})
+// @Success      200 {object} map[string]string "Web search chat response"
+// @Failure      400 {object} map[string]string "Internal server error"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/chat/web-search [post]
 func (h *ChatHandler) WebSearchChat(c *gin.Context) {
 	var request models.WebSearchRequest
 

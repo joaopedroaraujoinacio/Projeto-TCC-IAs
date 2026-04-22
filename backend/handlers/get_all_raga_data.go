@@ -8,6 +8,14 @@ import (
 )
 
 
+// Signup godoc
+// @Summary      Get all data registered on the database
+// @Tags         Rag
+// @Accept       json
+// @Success      201 {object} map[string]string "Database data"
+// @Failure      400 {object} map[string]string "Invalid request"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/rag/get_all_data [get]
 func GetAllRagData(db *sql.DB, c *gin.Context ) {
 	query := "SELECT id, content FROM rag_data"
 

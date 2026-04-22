@@ -12,7 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
+// CreateRagData godoc
+// @Summary      Create a new RAG data entry
+// @Tags         Rag
+// @Accept       json
+// @Produce      json
+// @Param        request body models.RagData true "Rag content"
+// @Success      201 {object} map[string]string "Created successfully"
+// @Failure      400 {object} map[string]string "Invalid request"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/rag [post]
 func CreateRagData(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data models.RagData

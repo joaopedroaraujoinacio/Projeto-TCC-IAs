@@ -7,7 +7,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
+// StreamChat godoc
+// @Summary      Send a message to the chat
+// @Tags         Chat
+// @Accept       json
+// @Produce      json
+// @Param        request body models.ChatRequest true "Chat message"
+// @Success      200 {object} map[string]string "Chat response"
+// @Failure      400 {object} map[string]string "Invalid request"
+// @Failure      500 {object} map[string]string "Internal server error"
+// @Router       /api/chat [post]
 func (h *ChatHandler) StreamChat(c *gin.Context) {
 	var request models.ChatRequest
 

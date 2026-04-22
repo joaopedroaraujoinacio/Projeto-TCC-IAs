@@ -5,12 +5,37 @@ import (
 	"log"
 	"go-project/config"
 	"go-project/routes"
-	"github.com/gin-gonic/gin"
+	"go-project/server"
+
+	_ "go-project/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title           Farol IA
+// @version         1.0
+// @description     Self hosted AI platform
+// @termsOfService  http://swagger.io/terms/
 
+// @contact.name   API Support
+// @contact.url    http://www.yourwebsite.com/support
+// @contact.email  support@yourwebsite.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @schemes http https
+
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
-	r := gin.Default()
+	server := server.SetupServer()
+
 	cfg := config.Load()
 	db, err := config.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
@@ -18,17 +43,20 @@ func main() {
 	}
 	defer db.Close()
 
-	r.LoadHTMLGlob("templates/*")
-	r.Static("/static", "./static")
+	server.LoadHTMLGlob("templates/*")
+	server.Static("/static", "./static")
 
-	routes.SetupRoutes(r, db)
+	routes.SetupRoutes(server, db)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	
+	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	log.Printf("server starting on port %s", port)
-	r.Run("0.0.0.0:" + port)
+	log.Println("Swagger documentation available at: http://localhost:8080/swagger/index.html")
+	server.Run("0.0.0.0:" + port)
 }
 
