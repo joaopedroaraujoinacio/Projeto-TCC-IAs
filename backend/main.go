@@ -1,13 +1,18 @@
 package main
 
 import (
-	"os"
-	"log"
 	"go-project/config"
+	"go-project/handlers"
+	"go-project/repositories"
 	"go-project/routes"
 	"go-project/server"
+	"go-project/services"
+	"go-project/utils"
+	"log"
+	"os"
 
 	_ "go-project/docs"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -35,7 +40,6 @@ import (
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	server := server.SetupServer()
-
 	cfg := config.Load()
 	db, err := config.ConnectDB(cfg.DatabaseURL)
 	if err != nil {
@@ -46,7 +50,17 @@ func main() {
 	server.LoadHTMLGlob("templates/*")
 	server.Static("/static", "./static")
 
-	routes.SetupRoutes(server, db)
+
+	chatRepo := repositories.NewChatRepository("http://ollama:11434")
+	searchRepo := utils.NewWebSearchRepository()
+	chatService := services.NewChatService(chatRepo, searchRepo)
+	chatHandler := handlers.NewChatHandler(chatService, db)
+
+	deps := &routes.Dependencies{
+		ChatHandler: chatHandler,
+	}
+
+	routes.SetupRoutes(server, deps)
 
 	port := os.Getenv("PORT")
 	if port == "" {
