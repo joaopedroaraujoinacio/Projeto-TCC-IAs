@@ -10,6 +10,7 @@ import (
 
 type ChatService interface {
 	StreamChat(request *models.ChatRequest) (<-chan string, <-chan error)
+	StreamOpenAI(request *models.ChatRequest) (<-chan string, <-chan error)
 	RagChat(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error)
 	WebSearchChat(request *models.WebSearchRequest) (*models.WebSearchResponse, <-chan string, <-chan error)
 }

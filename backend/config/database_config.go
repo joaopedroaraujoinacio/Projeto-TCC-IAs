@@ -3,18 +3,23 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"github.com/joho/godotenv"
 )
 
 
 type Config struct {
-	DatabaseURL string
-	Port 				string
+	DatabaseURL 	string
+	Port 					string
+	OpenAIAPIKey 	string
 }
 
 func Load() *Config {
+	godotenv.Load()
+
 	return &Config{
  		DatabaseURL: getEnv("DATABASE_URL", getDefaultDatabasePath()),
 		Port: getEnv("PORT", "8080"),
+		OpenAIAPIKey: os.Getenv("OPENAI_API_KEY"),
 	}
 }
 

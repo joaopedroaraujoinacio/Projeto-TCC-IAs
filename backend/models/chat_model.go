@@ -6,9 +6,10 @@ type Message struct {
 }
 
 type ChatRequest struct {
-		Message string `json:"message" example:"can you talk a little bit about my grandfather story?"`
-    History []Message `json:"history"`  
-    Model   string    `json:"model,omitempty"`
+		Message 	string 		`json:"message" example:"can you talk a little bit about my grandfather story?"`
+    History 	[]Message `json:"history"`  
+    Model   	string    `json:"model,omitempty"`
+		Provider 	string   	`json:"provider"` 
 }
 
 type ChatResponse struct {

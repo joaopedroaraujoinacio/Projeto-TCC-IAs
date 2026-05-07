@@ -49,6 +49,9 @@
     .tab-btn:hover { background: #353a52; color: #a0a5b8; }
     .tab-btn.active { background: #ffde21; color: #000; border-color: #ffde21; box-shadow: 0 2px 8px rgba(255,222,33,0.3); }
 
+    /* GPT tab gets green when active */
+    #openaiTab.active { background: #10a37f; color: #fff; border-color: #10a37f; box-shadow: 0 2px 8px rgba(16,163,127,0.3); }
+
     #messages { 
         flex: 1;
         overflow-y: auto;
@@ -323,6 +326,7 @@
     <div class="tabs-container">
         <button class="tab-btn" id="ragChatTab">RAG</button>
         <button class="tab-btn" id="webSearchTab">Web Search</button>
+        <button class="tab-btn" id="openaiTab">GPT-4o</button>
     </div>
 
     <div id="messages"></div>
@@ -352,6 +356,7 @@
             <li>Use o <strong>Chat Normal</strong> (padrão) para perguntas gerais.</li>
             <li>Use o <strong>RAG</strong> para consultar documentos enviados.</li>
             <li>Use o <strong>Web Search</strong> para buscar informações na internet.</li>
+            <li>Use o <strong>GPT-4o</strong> para usar o modelo da OpenAI.</li>
         </ul>
         <p>Dê o próximo passo: Experimente fazer uma consulta ou utilize o botão "Anexar" para enviar um documento e testar o poder da pesquisa contextual (RAG) em seu ambiente local!</p>
         <button id="closeHelp">X</button>
@@ -364,6 +369,7 @@ const messagesDiv = document.getElementById('messages');
 const sendBtn = document.getElementById('sendBtn');
 const ragChatTab = document.getElementById('ragChatTab');
 const webSearchTab = document.getElementById('webSearchTab');
+const openaiTab = document.getElementById('openaiTab');
 
 let chatMode = 'normal';
 
@@ -391,6 +397,7 @@ ragChatTab.addEventListener('click', () => {
         chatMode = 'rag';
         ragChatTab.classList.add('active');
         webSearchTab.classList.remove('active');
+        openaiTab.classList.remove('active');
     }
 });
 
@@ -402,6 +409,19 @@ webSearchTab.addEventListener('click', () => {
         chatMode = 'websearch';
         webSearchTab.classList.add('active');
         ragChatTab.classList.remove('active');
+        openaiTab.classList.remove('active');
+    }
+});
+
+openaiTab.addEventListener('click', () => {
+    if (chatMode === 'openai') {
+        chatMode = 'normal';
+        openaiTab.classList.remove('active');
+    } else {
+        chatMode = 'openai';
+        openaiTab.classList.add('active');
+        ragChatTab.classList.remove('active');
+        webSearchTab.classList.remove('active');
     }
 });
 
@@ -495,6 +515,12 @@ async function handleStreamingChat(message) {
         endpoint = '/api/chat/web-search';
         requestBody = {
             query: message
+        };
+    } else if (chatMode === 'openai') {
+        endpoint = '/api/chat/openai';
+        requestBody = {
+            message,
+            history: conversationHistory.slice(0, -1)
         };
     } else {
         endpoint = '/api/chat';

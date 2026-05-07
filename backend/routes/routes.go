@@ -21,6 +21,7 @@ func SetupRoutes(server *gin.Engine, deps *Dependencies) {
 		api.POST("/chat", deps.ChatHandler.StreamChat)
 		api.POST("/chat/rag", deps.ChatHandler.RagChat)
 		api.POST("/chat/web-search", deps.ChatHandler.WebSearchChat)
+		api.POST("/chat/openai", deps.ChatHandler.StreamOpenAI)
 		// api.POST("/rag", handlers.CreateRagData(db))
 		// api.GET("/rag/search", handlers.SearchSimilarRagData(db))
 		// api.GET("/rag/get_all_data", getAllRagData)
