@@ -27,6 +27,6 @@ func SetupRoutes(server *gin.Engine, deps *Dependencies) {
 		// api.GET("/rag/get_all_data", getAllRagData)
 	}
 
-		server.StaticFile("/chat", "./templates/chat.html")
+		server.StaticFile("/chat", "./templates/index.html")
 }
 
