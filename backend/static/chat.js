@@ -7,8 +7,10 @@ const webSearchTab = document.getElementById('webSearchTab');
 const cloudTab     = document.getElementById('cloudTab');
 const cloudBar     = document.getElementById('cloudBar');
 const gptBtn       = document.getElementById('gptBtn');
+const geminiBtn    = document.getElementById('geminiBtn');
 
-let chatMode = 'normal';
+let chatMode     = 'normal';
+let cloudProvider = 'openai'; // tracks which cloud provider is selected
 let conversationHistory = [];
 
 input.addEventListener('input', function() {
@@ -45,12 +47,12 @@ webSearchTab.addEventListener('click', () => {
 });
 
 cloudTab.addEventListener('click', () => {
-    if (chatMode === 'openai') {
+    if (chatMode === 'cloud') {
         chatMode = 'normal';
         cloudTab.classList.remove('active');
         cloudBar.style.display = 'none';
     } else {
-        chatMode = 'openai';
+        chatMode = 'cloud';
         cloudTab.classList.add('active');
         ragChatTab.classList.remove('active');
         webSearchTab.classList.remove('active');
@@ -58,7 +60,17 @@ cloudTab.addEventListener('click', () => {
     }
 });
 
-gptBtn.addEventListener('click', () => { /* placeholder for future provider switching */ });
+gptBtn.addEventListener('click', () => {
+    cloudProvider = 'openai';
+    gptBtn.classList.add('active');
+    geminiBtn.classList.remove('active');
+});
+
+geminiBtn.addEventListener('click', () => {
+    cloudProvider = 'gemini';
+    geminiBtn.classList.add('active');
+    gptBtn.classList.remove('active');
+});
 
 document.getElementById('clearChatBtn').addEventListener('click', () => {
     if (confirm('Deseja realmente limpar toda a conversa?')) {
@@ -107,11 +119,13 @@ function escapeHtml(text) {
 }
 
 function buildEndpoint(message) {
+    // resolve cloud provider endpoint
+    const cloudURL = cloudProvider === 'gemini' ? '/api/chat/gemini' : '/api/chat/openai';
     const endpoints = {
-        rag:       { url: '/api/chat/rag',        body: { message, history: conversationHistory.slice(0, -1) } },
-        websearch: { url: '/api/chat/web-search',  body: { query: message } },
-        openai:    { url: '/api/chat/openai',      body: { message, history: conversationHistory.slice(0, -1) } },
-        normal:    { url: '/api/chat',             body: { message, history: conversationHistory.slice(0, -1) } },
+        rag:      { url: '/api/chat/rag',       body: { message, history: conversationHistory.slice(0, -1) } },
+        websearch:{ url: '/api/chat/web-search', body: { query: message } },
+        cloud:    { url: cloudURL,               body: { message, history: conversationHistory.slice(0, -1) } },
+        normal:   { url: '/api/chat',            body: { message, history: conversationHistory.slice(0, -1) } },
     };
     return endpoints[chatMode] || endpoints.normal;
 }
@@ -133,7 +147,6 @@ async function handleStreamingChat(message) {
     const statsSpan      = aiMsg.querySelector('.streaming-stats');
 
     let fullResponse = '', tokenCount = 0, startTime = Date.now(), firstTokenTime = null;
-
     const { url, body } = buildEndpoint(message);
 
     try {
@@ -235,63 +248,6 @@ function finalizeMessage(aiMsg, statsSpan, tokenCount, firstTokenTime, startTime
     const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
     aiMsg.className = 'message assistant';
     statsSpan.innerHTML = `<span>${avgSpeed} tok/sec</span><span>${tokenCount} tokens</span><span>${timeToFirst}s to first token</span><span>Stop: ${stopReason}</span>`;
-}
-
-document.getElementById('settingsBtn').onclick = () => {
-    document.getElementById('settingsBox').style.display = 'block';
-    document.getElementById('settingsOverlay').style.display = 'block';
-    loadSavedKey();
-};
-
-document.getElementById('closeSettings').onclick = closeSettingsModal;
-document.getElementById('settingsOverlay').onclick = closeSettingsModal;
-
-function closeSettingsModal() {
-    document.getElementById('settingsBox').style.display = 'none';
-    document.getElementById('settingsOverlay').style.display = 'none';
-    document.getElementById('keyStatus').textContent = '';
-}
-
-document.getElementById('toggleKeyVisibility').onclick = () => {
-    const inp = document.getElementById('openaiKeyInput');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-};
-
-document.getElementById('saveSettingsBtn').onclick = async () => {
-    const key    = document.getElementById('openaiKeyInput').value.trim();
-    const status = document.getElementById('keyStatus');
-    if (!key.startsWith('sk-')) {
-        status.style.color = '#ff4f4f';
-        status.textContent = 'Chave inválida — deve começar com sk-';
-        return;
-    }
-    try {
-        const res = await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'openai_api_key', value: key })
-        });
-        if (!res.ok) throw new Error();
-        status.style.color = '#10a37f';
-        status.textContent = '✓ Chave salva com sucesso';
-    } catch {
-        status.style.color = '#ff4f4f';
-        status.textContent = 'Erro ao salvar chave';
-    }
-};
-
-async function loadSavedKey() {
-    try {
-        const res = await fetch('/api/settings?key=openai_api_key');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.value) {
-            document.getElementById('openaiKeyInput').value = data.value;
-            const status = document.getElementById('keyStatus');
-            status.style.color = '#10a37f';
-            status.textContent = '✓ Chave configurada';
-        }
-    } catch {}
 }
 
 document.getElementById('openUpload').onclick = () => { document.getElementById('uploadBox').style.display = 'block'; };

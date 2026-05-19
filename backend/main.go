@@ -51,7 +51,7 @@ func main() {
 	server.Static("/static", "./static")
 
 
-	chatRepo := repositories.NewChatRepository("http://ollama:11434", cfg.OpenAIAPIKey)
+	chatRepo := repositories.NewChatRepository("http://ollama:11434", cfg.OpenAIAPIKey, cfg.GeminiAPIKey)
 	searchRepo := utils.NewWebSearchRepository()
 	chatService := services.NewChatService(chatRepo, searchRepo)
 	chatHandler := handlers.NewChatHandler(chatService, db)

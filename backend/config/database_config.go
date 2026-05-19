@@ -11,6 +11,7 @@ type Config struct {
 	DatabaseURL 	string
 	Port 					string
 	OpenAIAPIKey 	string
+	GeminiAPIKey 	string
 }
 
 func Load() *Config {
@@ -20,6 +21,7 @@ func Load() *Config {
  		DatabaseURL: getEnv("DATABASE_URL", getDefaultDatabasePath()),
 		Port: getEnv("PORT", "8080"),
 		OpenAIAPIKey: os.Getenv("OPENAI_API_KEY"),
+		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
 	}
 }
 

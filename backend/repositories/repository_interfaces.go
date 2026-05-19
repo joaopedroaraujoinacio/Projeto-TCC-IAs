@@ -1,32 +1,36 @@
 package repositories
 
 import (
-	"time"
 	"net/http"
+	"time"
+
 	"go-project/models"
 )
 
-
 type ChatRepository interface {
-    SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error)
-    SendToOpenAI(request *models.ChatRequest) (<-chan models.StreamChunk, error)
+	SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error)
+	SendToOpenAI(request *models.ChatRequest) (<-chan models.StreamChunk, error)
+	SendToGemini(request *models.ChatRequest) (<-chan models.StreamChunk, error)
 }
 
-func NewChatRepository(ollamaURL string, openAIKey string) ChatRepository {
-    return &chatRepository{
-        ollamaURL: ollamaURL,
-        openAIURL: "https://api.openai.com/v1/chat/completions",
-        openAIKey: openAIKey,
-        client: &http.Client{
-            Timeout: 500 * time.Second,
-        },
-    }
+func NewChatRepository(ollamaURL, openAIKey, geminiKey string) ChatRepository {
+	return &chatRepository{
+		ollamaURL: ollamaURL,
+		openAIURL: "https://api.openai.com/v1/chat/completions",
+		openAIKey: openAIKey,
+		geminiURL: "https://generativelanguage.googleapis.com/v1beta",
+		geminiKey: geminiKey,
+		client: &http.Client{
+			Timeout: 500 * time.Second,
+		},
+	}
 }
 
 type chatRepository struct {
-    ollamaURL string
-		openAIKey string
-		openAIURL string
-    client    *http.Client
+	ollamaURL string
+	openAIURL string
+	openAIKey string
+	geminiURL string
+	geminiKey string
+	client    *http.Client
 }
-
