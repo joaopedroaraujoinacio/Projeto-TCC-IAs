@@ -37,6 +37,15 @@ func (s *chatService) StreamGemini(request *models.ChatRequest) (<-chan string, 
 
 			buffer += chunk.Text
 
+			if chunk.Done {
+				// flush entire remaining buffer at once when done
+				if buffer != "" {
+					messageChan <- buffer
+				}
+				return
+			}
+
+			// only split on spaces mid-stream
 			for {
 				spaceIdx := strings.Index(buffer, " ")
 				if spaceIdx == -1 {
@@ -45,13 +54,11 @@ func (s *chatService) StreamGemini(request *models.ChatRequest) (<-chan string, 
 				messageChan <- buffer[:spaceIdx+1]
 				buffer = buffer[spaceIdx+1:]
 			}
+		}
 
-			if chunk.Done {
-				if buffer != "" {
-					messageChan <- buffer
-				}
-				return
-			}
+		// stream closed without Done signal — flush whatever is left
+		if buffer != "" {
+			messageChan <- buffer
 		}
 	}()
 

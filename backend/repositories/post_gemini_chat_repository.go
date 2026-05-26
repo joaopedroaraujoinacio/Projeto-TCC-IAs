@@ -20,15 +20,14 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 
 	model := request.Model
 	if model == "" {
-		model = "gemini-2.0-flash"
+		model = "gemini-2.5-flash"
 	}
 
-	// Gemini uses a different message format — no "system" role, alternating user/model
 	contents := []models.GeminiContent{}
 	for _, msg := range request.History {
 		role := msg.Role
 		if role == "assistant" {
-			role = "model" // Gemini calls it "model" not "assistant"
+			role = "model"
 		}
 		contents = append(contents, models.GeminiContent{
 			Role:  role,
@@ -43,7 +42,6 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 	fmt.Printf("[Gemini] model=%s messages=%d\n", model, len(contents))
 
 	payload := models.GeminiRequest{Contents: contents}
-
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal gemini request: %w", err)
@@ -75,6 +73,9 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 		defer resp.Body.Close()
 
 		scanner := bufio.NewScanner(resp.Body)
+		buf := make([]byte, 10*1024*1024)
+		scanner.Buffer(buf, 10*1024*1024)
+
 		for scanner.Scan() {
 			line := scanner.Text()
 
@@ -98,7 +99,8 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 			}
 
 			candidate := chunk.Candidates[0]
-			isDone := candidate.FinishReason == "STOP"
+			isDone := strings.EqualFold(candidate.FinishReason, "STOP") ||
+				strings.EqualFold(candidate.FinishReason, "MAX_TOKENS")
 
 			text := ""
 			if len(candidate.Content.Parts) > 0 {
@@ -117,6 +119,8 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 
 		if err := scanner.Err(); err != nil {
 			streamChan <- models.StreamChunk{Error: fmt.Errorf("scanner error: %w", err)}
+		} else {
+			streamChan <- models.StreamChunk{Done: true}
 		}
 	}()
 

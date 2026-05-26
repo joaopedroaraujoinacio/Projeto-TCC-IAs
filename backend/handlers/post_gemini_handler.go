@@ -2,10 +2,9 @@ package handlers
 
 import (
 	"io"
+	"fmt"
 	"net/http"
-
 	"go-project/models"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,21 +23,31 @@ func (h *ChatHandler) StreamGemini(c *gin.Context) {
 	messageChan, errorChan := h.chatService.StreamGemini(&request)
 
 	c.Stream(func(w io.Writer) bool {
-		select {
-		case msg, ok := <-messageChan:
-			if !ok {
-				c.SSEvent("done", "")
-				return false
+			select {
+			case msg, ok := <-messageChan:
+					if !ok {
+							select {
+							case err, ok := <-errorChan:
+									if ok && err != nil {
+											fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+											return false
+									}
+							default:
+							}
+							fmt.Fprintf(w, "event: done\ndata: \n\n")
+							return false
+					}
+					fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
+					return true
+
+			case err, ok := <-errorChan:
+					if ok && err != nil {
+							fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+					}
+					return false
+
+			case <-c.Request.Context().Done():
+					return false
 			}
-			c.SSEvent("message", msg)
-			return true
-		case err, ok := <-errorChan:
-			if ok && err != nil {
-				c.SSEvent("error", err.Error())
-			}
-			return false
-		case <-c.Request.Context().Done():
-			return false
-		}
 	})
 }
