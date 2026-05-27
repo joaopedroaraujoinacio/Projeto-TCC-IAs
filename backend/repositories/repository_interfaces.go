@@ -13,9 +13,10 @@ type ChatRepository interface {
 	SendToGemini(request *models.ChatRequest) (<-chan models.StreamChunk, error)
 }
 
-func NewChatRepository(ollamaURL, openAIKey, geminiKey string) ChatRepository {
+func NewChatRepository(ollamaURL, ollamaDefaultModel, openAIKey, geminiKey string) ChatRepository {
 	return &chatRepository{
 		ollamaURL: ollamaURL,
+		ollamaDefaultModel: ollamaDefaultModel,
 		openAIURL: "https://api.openai.com/v1/chat/completions",
 		openAIKey: openAIKey,
 		geminiURL: "https://generativelanguage.googleapis.com/v1beta",
@@ -32,5 +33,6 @@ type chatRepository struct {
 	openAIKey string
 	geminiURL string
 	geminiKey string
+	ollamaDefaultModel string
 	client    *http.Client
 }

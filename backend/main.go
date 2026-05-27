@@ -50,8 +50,12 @@ func main() {
 	server.LoadHTMLGlob("templates/*")
 	server.Static("/static", "./static")
 
+	ollamaURL := os.Getenv("OLLAMA_URL")
+	if ollamaURL == "" {
+		ollamaURL = "http://ollama:11434"
+	}
 
-	chatRepo := repositories.NewChatRepository("http://ollama:11434", cfg.OpenAIAPIKey, cfg.GeminiAPIKey)
+	chatRepo := repositories.NewChatRepository(ollamaURL,	cfg.OllamaDefaultModel, cfg.OpenAIAPIKey, cfg.GeminiAPIKey)
 	searchRepo := utils.NewWebSearchRepository()
 	chatService := services.NewChatService(chatRepo, searchRepo)
 	chatHandler := handlers.NewChatHandler(chatService, db)

@@ -8,10 +8,12 @@ import (
 
 
 type Config struct {
-	DatabaseURL 	string
-	Port 					string
-	OpenAIAPIKey 	string
-	GeminiAPIKey 	string
+	DatabaseURL 				string
+	Port 								string
+	OpenAIAPIKey 				string
+	GeminiAPIKey 				string
+	OllamaURL 					string
+	OllamaDefaultModel 	string
 }
 
 func Load() *Config {
@@ -22,6 +24,8 @@ func Load() *Config {
 		Port: getEnv("PORT", "8080"),
 		OpenAIAPIKey: os.Getenv("OPENAI_API_KEY"),
 		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
+		OllamaURL: os.Getenv("OLLAMA_URL"),
+		OllamaDefaultModel: os.Getenv("OLLAMA_DEFAULT_MODEL"),
 	}
 }
 

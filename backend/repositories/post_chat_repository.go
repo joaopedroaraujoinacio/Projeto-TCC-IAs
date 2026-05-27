@@ -11,9 +11,10 @@ import (
 
 
 func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.StreamChunk, error) {
+		fmt.Printf("Ollama URL: %s\n", r.ollamaURL)
     model := request.Model
     if model == "" {
-        model = "llama3.2:3b"
+				model = r.ollamaDefaultModel 
     }
 
     messages := []map[string]string{}
@@ -76,7 +77,8 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.S
 
             var ollamaResp models.OllamaResponse
             if err := json.Unmarshal([]byte(line), &ollamaResp); err != nil {
-                fmt.Printf("Parse error on line %d: %v\n", lineCount, err) 
+                // fmt.Printf("Parse error on line %d: %v\n", lineCount, err) 
+								fmt.Printf("Parse error on line %d: %v | raw: %s\n", lineCount, err, line)
                 streamChan <- models.StreamChunk{
                     Error: fmt.Errorf("failed to parse response: %w", err),
                 }
