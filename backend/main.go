@@ -60,8 +60,18 @@ func main() {
 	chatService := services.NewChatService(chatRepo, searchRepo)
 	chatHandler := handlers.NewChatHandler(chatService, db)
 
+	userRepo := repositories.NewUserRepository(db)
+	userService := services.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+
+	ragRepo := repositories.NewRagRepository(db)
+	ragService := services.NewRagService(ragRepo)
+	ragHandler := handlers.NewRagHandler(ragService)
+
 	deps := &routes.Dependencies{
 		ChatHandler: chatHandler,
+		UserHandler: userHandler,
+		RagHandler: ragHandler,
 	}
 
 	routes.SetupRoutes(server, deps)

@@ -36,3 +36,10 @@ func NewUserService(repo repositories.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
+type RagService struct {
+	repo repositories.RagRepository
+}
+
+func NewRagService(repo repositories.RagRepository) *RagService {
+	return &RagService{repo: repo}
+}

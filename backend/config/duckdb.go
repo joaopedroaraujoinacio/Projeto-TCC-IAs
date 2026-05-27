@@ -47,7 +47,6 @@ func ConnectDB(databaseURL string) (*sql.DB, error) {
 	return db, nil
 }
 
-
 func ensureDBDirectory(databaseURL string) error {
 	if databaseURL != ":memory:" {
 		dir := filepath.Dir(databaseURL)
@@ -58,43 +57,49 @@ func ensureDBDirectory(databaseURL string) error {
 	return nil
 }
 
-
 func initializeSchema(db *sql.DB) error {
 	schema := `
+	CREATE SEQUENCE IF NOT EXISTS sequence_users START 1;
+	CREATE TABLE IF NOT EXISTS users (
+		id       INTEGER PRIMARY KEY DEFAULT nextval('sequence_users'),
+		email    VARCHAR(255) NOT NULL UNIQUE,
+		password TEXT NOT NULL,
+		role     VARCHAR(50) NOT NULL DEFAULT 'user'
+	);
+
 	CREATE SEQUENCE IF NOT EXISTS sequence_rag_data START 1;
 	CREATE TABLE IF NOT EXISTS rag_data (
-		id INTEGER PRIMARY KEY DEFAULT nextval('sequence_rag_data'),
-		content TEXT NOT NULL,
-		content_name VARCHAR(100),
-		embedding FLOAT[768],
-		tokens TEXT,
+		id             INTEGER PRIMARY KEY DEFAULT nextval('sequence_rag_data'),
+		user_id        INTEGER NOT NULL REFERENCES users(id),
+		content        TEXT NOT NULL,
+		content_name   VARCHAR(100),
+		embedding      FLOAT[768],
+		tokens         TEXT,
 		content_length INTEGER
 	);
-		
+
 	CREATE TABLE IF NOT EXISTS bm25_stats (
-		term TEXT PRIMARY KEY,
-		doc_freq INTEGER,
-		total_freq INTEGER
+		user_id    INTEGER NOT NULL REFERENCES users(id),
+		term       TEXT NOT NULL,
+		doc_freq   INTEGER,
+		total_freq INTEGER,
+		PRIMARY KEY (user_id, term)
 	);
 
 	CREATE TABLE IF NOT EXISTS corpus_stats (
-		id INTEGER PRIMARY KEY DEFAULT 1,
-		total_docs INTEGER,
+		user_id            INTEGER PRIMARY KEY REFERENCES users(id),
+		total_docs         INTEGER,
 		avg_content_length FLOAT
 	);
 
-	INSERT INTO corpus_stats (id, total_docs, avg_content_length)
-	SELECT 1, 0, 0.0
-	WHERE NOT EXISTS (SELECT 1 FROM corpus_stats WHERE id = 1);
-	
+	CREATE INDEX IF NOT EXISTS idx_rag_data_user ON rag_data(user_id);
 	CREATE INDEX IF NOT EXISTS idx_rag_data_tokens ON rag_data(tokens);
 	`
 	_, err := db.Exec(schema)
 	if err != nil {
 		return fmt.Errorf("failed to create schema: %w", err)
 	}
-
-	log.Println("database config initialized successfully")
+	log.Println("database schema initialized successfully")
 	return nil
 }
 

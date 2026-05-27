@@ -25,3 +25,12 @@ type UserHandler struct {
 func NewUserHandler(svc *services.UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
+
+type RagHandler struct {
+	svc *services.RagService
+}
+
+func NewRagHandler(svc *services.RagService) *RagHandler {
+	return &RagHandler{svc: svc}
+}
+

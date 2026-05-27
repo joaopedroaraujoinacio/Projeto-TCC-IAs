@@ -50,3 +50,17 @@ type userRepositoryImpl struct {
 func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepositoryImpl{db: db}
 }
+
+type RagRepository interface {
+	AddData(userID int64, data *models.RagData) error
+	SearchSimilar(userID int64, embedding []float32, limit int) ([]models.RagData, error)
+	GetAllData(userID int64) ([]models.RagData, error)
+}
+
+type ragRepositoryImpl struct {
+	db *sql.DB
+}
+
+func NewRagRepository(db *sql.DB) RagRepository {
+	return &ragRepositoryImpl{db: db}
+}
