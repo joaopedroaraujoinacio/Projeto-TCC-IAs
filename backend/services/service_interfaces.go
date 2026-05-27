@@ -26,5 +26,13 @@ func NewChatService(chatRepo repositories.ChatRepository, searchRepo utils.WebSe
 		chatRepo: chatRepo,
 		searchRepo: searchRepo,
 	}
+
+}
+type UserService struct {
+	repo repositories.UserRepository
+}
+
+func NewUserService(repo repositories.UserRepository) *UserService {
+	return &UserService{repo: repo}
 }
 

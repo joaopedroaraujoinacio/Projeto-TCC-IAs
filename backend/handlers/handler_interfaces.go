@@ -18,3 +18,10 @@ func NewChatHandler(chatService services.ChatService, db *sql.DB) *ChatHandler {
 	}
 }
 
+type UserHandler struct {
+	svc *services.UserService
+}
+
+func NewUserHandler(svc *services.UserService) *UserHandler {
+	return &UserHandler{svc: svc}
+}

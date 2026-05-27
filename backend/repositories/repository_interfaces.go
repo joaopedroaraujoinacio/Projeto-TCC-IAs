@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -35,4 +36,17 @@ type chatRepository struct {
 	geminiKey string
 	ollamaDefaultModel string
 	client    *http.Client
+}
+
+type UserRepository interface {
+	Save(email, hashedPassword string) (int64, error)
+	FindByEmail(email string) (int64, string, string, error)
+}
+
+type userRepositoryImpl struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepositoryImpl{db: db}
 }
