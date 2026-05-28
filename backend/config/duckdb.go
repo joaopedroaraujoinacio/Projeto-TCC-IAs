@@ -1,48 +1,36 @@
-package config 
+package config
 
 import (
-	"os"
+	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
-	"database/sql"
+
 	_ "github.com/marcboeker/go-duckdb"
 )
 
-
 func ConnectDB(databaseURL string) (*sql.DB, error) {
-	if err := ensureDBDirectory(databaseURL)
-	err != nil {
+	if err := ensureDBDirectory(databaseURL); err != nil {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
-
 	db, err := sql.Open("duckdb", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
-
-	if err := db.Ping(); 
-	err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err) 
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-
-
 	log.Println("Installing vss for vector operations...")
-	if _, err := db.Exec("INSTALL vss");
-	err != nil {
-		log.Println("vss might already be installed: %w", err)
+	if _, err := db.Exec("INSTALL vss"); err != nil {
+		log.Printf("vss might already be installed: %v", err)
 	}
-
-	if _, err :=db.Exec("LOAD vss");
-	err != nil {
+	if _, err := db.Exec("LOAD vss"); err != nil {
 		return nil, fmt.Errorf("failed to load vss extension: %w", err)
 	}
-
-	if err := initializeSchema(db);
-	err != nil {
-		return nil, fmt.Errorf("failed to initializeSchema: %w", err)
+	if err := initializeSchema(db); err != nil {
+		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
-
 	log.Println("successfully connected to DuckDB with vector support")
 	return db, nil
 }
@@ -102,4 +90,3 @@ func initializeSchema(db *sql.DB) error {
 	log.Println("database schema initialized successfully")
 	return nil
 }
-

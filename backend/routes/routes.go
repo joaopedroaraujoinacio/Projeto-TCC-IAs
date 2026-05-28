@@ -2,6 +2,7 @@ package routes
 
 import (
 	"go-project/handlers"
+	"go-project/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,11 +27,15 @@ func SetupRoutes(server *gin.Engine, deps *Dependencies) {
 		api.POST("/chat/openai", deps.ChatHandler.StreamOpenAI)
 		api.POST("/chat/gemini", deps.ChatHandler.StreamGemini)
 
-		api.POST("/rag", deps.RagHandler.CreateRagData)
-		api.GET("/rag/search", deps.RagHandler.SearchSimilarRagData)
-		api.GET("/rag/get_all_data", deps.RagHandler.GetAllRagData)
-	}
+		authenticated := api.Group("/rag")
+		authenticated.Use(middleware.Authenticate())
+		{
+		authenticated.POST("/add_rag_data", deps.RagHandler.CreateRagData)
+		authenticated.GET("/search_rag_data", deps.RagHandler.SearchSimilarRagData)
+		authenticated.GET("/get_all_rag_data", deps.RagHandler.GetAllRagData)
+		}
 
+	}
 		server.StaticFile("/chat", "./templates/index.html")
 }
 

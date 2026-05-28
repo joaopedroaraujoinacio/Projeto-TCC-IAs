@@ -55,7 +55,7 @@ func (r *ragRepositoryImpl) SearchSimilar(userID int64, embedding []float32, lim
 }
 
 func (r *ragRepositoryImpl) GetAllData(userID int64) ([]models.RagData, error) {
-	query := `SELECT id, content, content_name, content_length FROM rag_data WHERE user_id = ?`
+	query := `SELECT id, content, content_name FROM rag_data WHERE user_id = ?`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rag data: %w", err)
@@ -65,7 +65,7 @@ func (r *ragRepositoryImpl) GetAllData(userID int64) ([]models.RagData, error) {
 	var results []models.RagData
 	for rows.Next() {
 		var d models.RagData
-		if err := rows.Scan(&d.ID, &d.Content, &d.ContentName, &d.ContentLength); err != nil {
+		if err := rows.Scan(&d.ID, &d.Content, &d.ContentName); err != nil {
 			return nil, err
 		}
 		results = append(results, d)

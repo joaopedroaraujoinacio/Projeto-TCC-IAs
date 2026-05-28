@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"go-project/models"
+	"go-project/utils"
 	"log"
 	"net/http"
 
@@ -35,8 +36,16 @@ func (h *UserHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "invalid credentials"})
 		return
 	}
+
+	token, err := utils.GenerateToken(loggedIn.Email, loggedIn.ID, loggedIn.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not generate token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "login successful",
+		"token": token,
 		"user": gin.H{
 			"id":    loggedIn.ID,
 			"email": loggedIn.Email,
