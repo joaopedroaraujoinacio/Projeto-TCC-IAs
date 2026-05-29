@@ -1,28 +1,16 @@
 package services
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"strings"
-	"database/sql"
-	"go-project/utils"
 	"go-project/models"
-	"go-project/repositories"
+	"go-project/utils"
 )
 
-// RagChat godoc
-// @Summary      Send a message using RAG context
-// @Tags         Chat
-// @Accept       json
-// @Produce      json
-// @Param        request body object true "Chat message" SchemaExample({"message": "can you talk a little bit about my grandfather story?"})
-// @Success      200 {object} map[string]string "RAG chat response"
-// @Failure      400 {object} map[string]string "Invalid request"
-// @Failure      500 {object} map[string]string "Internal server error"
-// @Router       /api/chat/rag [post]
-func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *models.ChatRequest) (<-chan string, <-chan error) {
+func (s *chatService) RagChat(userID int64, request *models.ChatRequest) (<-chan string, <-chan error) {
 	messageChan := make(chan string, 10)
-	errorChan := make(chan error, 1)
+	errorChan   := make(chan error, 1)
 
 	if strings.TrimSpace(request.Message) == "" {
 		errorChan <- fmt.Errorf("message cannot be empty")
@@ -35,25 +23,18 @@ func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *mode
 	if err != nil {
 		log.Printf("failed to generate query embedding: %v", err)
 	}
+	log.Printf("generated embedding for query: '%s' (length: %d)", request.Message, len(queryEmbedding))
 
-	log.Printf("Generated embedding for query: '%s' (length: %d)", query, len(queryEmbedding))
-
-	if len(queryEmbedding) > 0 {
-		log.Printf("first 5 embedding values: %v", queryEmbedding[:5])
-	}
-
-	results, err := repositories.RagDataSimilaritySearch(db, request.Message, queryEmbedding, limit, 0.5, 0.5)
+	results, err := s.ragRepo.SearchSimilar(userID, queryEmbedding, 5)
 	if err != nil {
-		log.Printf("failed to fetch search query from duckdb: %v", err)
+		log.Printf("failed to search rag data: %v", err)
 	}
+	log.Printf("repository returned %d results for user %d", len(results), userID)
 
-	log.Printf("repository returned %d results", len(results) )
-
-	context := utils.FormatContext(results)
-
+	ragContext := utils.FormatContext(results)
 	request.Message = fmt.Sprintf(
-		"Context: %s\n\nQuestion: %s. Please, if the context is not found or unrelated, make it clear to the user.", 
-		context, request.Message,
+		"Context: %s\n\nQuestion: %s. Please, if the context is not found or unrelated, make it clear to the user.",
+		ragContext, request.Message,
 	)
 
 	go func() {
@@ -66,30 +47,15 @@ func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *mode
 			return
 		}
 
-		buffer := ""
-		
 		for chunk := range streamChan {
 			if chunk.Error != nil {
 				errorChan <- chunk.Error
 				return
 			}
-
-			buffer += chunk.Text
-
-			for {
-				spaceIdx := strings.Index(buffer, " ")
-				if spaceIdx == -1 {
-					break
-				}
-				word := buffer[:spaceIdx+1] 
-				messageChan <- word
-				buffer = buffer[spaceIdx+1:]
+			if chunk.Text != "" {
+				messageChan <- chunk.Text
 			}
-
 			if chunk.Done {
-				if buffer != "" {
-					messageChan <- buffer
-				}
 				return
 			}
 		}
@@ -97,4 +63,3 @@ func (s *chatService) RagChat(db *sql.DB, query string, limit int, request *mode
 
 	return messageChan, errorChan
 }
-

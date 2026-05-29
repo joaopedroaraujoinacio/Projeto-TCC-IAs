@@ -55,18 +55,18 @@ func main() {
 		ollamaURL = "http://ollama:11434"
 	}
 
+	ragRepo := repositories.NewRagRepository(db)
+	ragService := services.NewRagService(ragRepo)
+	ragHandler := handlers.NewRagHandler(ragService)
+
 	chatRepo := repositories.NewChatRepository(ollamaURL,	cfg.OllamaDefaultModel, cfg.OpenAIAPIKey, cfg.GeminiAPIKey)
 	searchRepo := utils.NewWebSearchRepository()
-	chatService := services.NewChatService(chatRepo, searchRepo)
+	chatService := services.NewChatService(chatRepo, searchRepo, ragRepo)
 	chatHandler := handlers.NewChatHandler(chatService, db)
 
 	userRepo := repositories.NewUserRepository(db)
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
-
-	ragRepo := repositories.NewRagRepository(db)
-	ragService := services.NewRagService(ragRepo)
-	ragHandler := handlers.NewRagHandler(ragService)
 
 	deps := &routes.Dependencies{
 		ChatHandler: chatHandler,
