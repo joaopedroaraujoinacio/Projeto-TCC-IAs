@@ -107,9 +107,17 @@ func (r *chatRepository) SendToGemini(request *models.ChatRequest) (<-chan model
 				text = candidate.Content.Parts[0].Text
 			}
 
+			var tokenCount, promptTokens int
+			if isDone && chunk.UsageMetadata != nil {
+				tokenCount = chunk.UsageMetadata.CandidatesTokenCount
+				promptTokens = chunk.UsageMetadata.PromptTokenCount
+			}
+
 			streamChan <- models.StreamChunk{
-				Text: text,
-				Done: isDone,
+				Text:         text,
+				Done:         isDone,
+				TokenCount:   tokenCount,
+				PromptTokens: promptTokens,
 			}
 
 			if isDone {

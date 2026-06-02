@@ -20,6 +20,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    curl \
+    && mkdir -p /root/.duckdb/extensions/v1.1.3/linux_amd64 \
+    && curl -fL "https://extensions.duckdb.org/v1.1.3/linux_amd64/vss.duckdb_extension.gz" \
+    | gunzip > /root/.duckdb/extensions/v1.1.3/linux_amd64/vss.duckdb_extension \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/main .

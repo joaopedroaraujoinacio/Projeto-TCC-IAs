@@ -41,15 +41,16 @@ func CreateRagData(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := services.CreateDataEmbedding(db, &data);
-		err != nil {
+		chunksCreated, err := services.CreateDataEmbedding(db, &data)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create document" })
 			return
 		}
 
 		c.JSON(http.StatusCreated, gin.H{
-			"message": "embedded data created successfully",
-			"embedded_data": data,
+			"message":        "embedded data created successfully",
+			"chunks_created": chunksCreated,
+			"content_name":   data.ContentName,
 		})
 	}
 }

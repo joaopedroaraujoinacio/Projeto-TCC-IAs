@@ -4,6 +4,7 @@ import (
 	"go-project/models"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +30,10 @@ func (h *ChatHandler) StreamOpenAI(c *gin.Context) {
                 c.SSEvent("done", "")
                 return false
             }
+            if strings.HasPrefix(msg, "__token_stats__:") {
+                c.SSEvent("token_stats", strings.TrimPrefix(msg, "__token_stats__:"))
+                return true
+            }
             c.SSEvent("message", msg)
             return true
         case err, ok := <-errorChan:
@@ -41,4 +46,3 @@ func (h *ChatHandler) StreamOpenAI(c *gin.Context) {
         }
     })
 }
-

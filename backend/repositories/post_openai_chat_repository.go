@@ -19,7 +19,7 @@ func (r *chatRepository) SendToOpenAI(request *models.ChatRequest) (<-chan model
     if model == "" {
         model = "gpt-4.1-mini"
     }
-   fmt.Printf("[OpenAI] key present: %v, url: %s\n", r.openAIKey != "", r.openAIURL)
+
     messages := []map[string]string{}
     for _, msg := range request.History {
         messages = append(messages, map[string]string{
@@ -32,12 +32,11 @@ func (r *chatRepository) SendToOpenAI(request *models.ChatRequest) (<-chan model
         "content": request.Message,
     })
 
-    fmt.Printf("[OpenAI] model=%s messages=%d\n", model, len(messages))
-
     payload := models.OpenAIRequest{
-        Model:    model,
-        Messages: messages,
-        Stream:   true,
+        Model:         model,
+        Messages:      messages,
+        Stream:        true,
+        StreamOptions: &models.StreamOptions{IncludeUsage: true},
     }
 
     jsonData, err := json.Marshal(payload)
@@ -69,6 +68,8 @@ func (r *chatRepository) SendToOpenAI(request *models.ChatRequest) (<-chan model
         defer close(streamChan)
         defer resp.Body.Close()
 
+        var completionTokens, promptTokens int
+
         scanner := bufio.NewScanner(resp.Body)
         for scanner.Scan() {
             line := scanner.Text()
@@ -80,7 +81,11 @@ func (r *chatRepository) SendToOpenAI(request *models.ChatRequest) (<-chan model
             data := strings.TrimPrefix(line, "data: ")
 
             if data == "[DONE]" {
-                streamChan <- models.StreamChunk{Done: true}
+                streamChan <- models.StreamChunk{
+                    Done:         true,
+                    TokenCount:   completionTokens,
+                    PromptTokens: promptTokens,
+                }
                 return
             }
 
@@ -90,20 +95,19 @@ func (r *chatRepository) SendToOpenAI(request *models.ChatRequest) (<-chan model
                 continue
             }
 
+            if chunk.Usage != nil {
+                completionTokens = chunk.Usage.CompletionTokens
+                promptTokens = chunk.Usage.PromptTokens
+            }
+
             if len(chunk.Choices) == 0 {
                 continue
             }
 
-            choice := chunk.Choices[0]
-            isDone := choice.FinishReason != nil && *choice.FinishReason == "stop"
-
-            streamChan <- models.StreamChunk{
-                Text: choice.Delta.Content,
-                Done: isDone,
-            }
-
-            if isDone {
-                return
+            if chunk.Choices[0].Delta.Content != "" {
+                streamChan <- models.StreamChunk{
+                    Text: chunk.Choices[0].Delta.Content,
+                }
             }
         }
 

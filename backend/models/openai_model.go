@@ -1,9 +1,14 @@
 package models
 
+type StreamOptions struct {
+    IncludeUsage bool `json:"include_usage"`
+}
+
 type OpenAIRequest struct {
-    Model    string              `json:"model"`
-    Messages []map[string]string `json:"messages"`
-    Stream   bool                `json:"stream"`
+    Model         string              `json:"model"`
+    Messages      []map[string]string `json:"messages"`
+    Stream        bool                `json:"stream"`
+    StreamOptions *StreamOptions      `json:"stream_options,omitempty"`
 }
 
 type OpenAIStreamChunk struct {

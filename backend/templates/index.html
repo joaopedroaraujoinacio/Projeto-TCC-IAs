@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,17 +22,33 @@
     </div>
 
     <div id="cloudBar">
-        <button class="cloud-btn active" id="gptBtn">GPT</button>
+        <button class="cloud-btn active" id="gptBtn">GPT-4.1 Mini</button>
         <button class="cloud-btn" id="geminiBtn">Gemini 2.5 Flash</button>
     </div>
 
-    <div id="messages"></div>
+    <div id="messages">
+        <div id="welcomeScreen">
+            <p id="welcomeTitle">Farol, como posso ajudar?</p>
+            <div id="suggestions">
+                <button class="suggestion-btn">O que é RAG?</button>
+                <button class="suggestion-btn">O que é um modelo de linguagem?</button>
+                <button class="suggestion-btn">Qual a diferença entre modelos locais e cloud?</button>
+                <button class="suggestion-btn">Como funciona a busca vetorial?</button>
+            </div>
+        </div>
+    </div>
 
     <form id="chatForm">
         <textarea id="messageInput" placeholder="Escreva sua mensagem..." rows="1"></textarea>
         <button type="submit" id="sendBtn">Enviar</button>
         <button type="button" id="openUpload" class="icon">Anexar</button>
     </form>
+
+    <div id="statusBar">
+        <span id="modeIndicator">Modo: Chat Local</span>
+        <span class="status-divider">·</span>
+        <span id="modelIndicator">llama3.2:3b</span>
+    </div>
 
     <div id="uploadBox">
         <h3>Enviar Arquivo</h3>
@@ -53,7 +69,7 @@
             <li>Use o <strong>Chat Normal</strong> (padrão) para perguntas gerais.</li>
             <li>Use o <strong>RAG</strong> para consultar documentos enviados.</li>
             <li>Use o <strong>Web Search</strong> para buscar informações na internet.</li>
-            <li>Use o <strong>Cloud AI</strong> para usar GPT ou Gemini.</li>
+            <li>Use o <strong>Cloud AI</strong> para usar GPT-4.1 Mini ou Gemini.</li>
         </ul>
         <button id="closeHelp">X</button>
     </div>

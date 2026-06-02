@@ -89,8 +89,10 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.S
                 ollamaResp.Message.Content, ollamaResp.Done) 
 
             streamChan <- models.StreamChunk{
-                Text:  ollamaResp.Message.Content,
-                Done:  ollamaResp.Done,
+                Text:         ollamaResp.Message.Content,
+                Done:         ollamaResp.Done,
+                TokenCount:   ollamaResp.EvalCount,
+                PromptTokens: ollamaResp.PromptEvalCount,
             }
 
             if ollamaResp.Done {

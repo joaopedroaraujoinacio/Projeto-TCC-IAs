@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"go-project/models"
 	"strings"
@@ -51,6 +52,14 @@ func (s *chatService) StreamChat(request *models.ChatRequest) (<-chan string, <-
 			if chunk.Done {
 				if buffer != "" {
 					messageChan <- buffer
+				}
+				if chunk.TokenCount > 0 {
+					if statsJSON, err := json.Marshal(models.TokenStats{
+						TokenCount:   chunk.TokenCount,
+						PromptTokens: chunk.PromptTokens,
+					}); err == nil {
+						messageChan <- "__token_stats__:" + string(statsJSON)
+					}
 				}
 				return
 			}

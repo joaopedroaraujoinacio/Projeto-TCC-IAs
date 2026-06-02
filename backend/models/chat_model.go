@@ -27,13 +27,21 @@ type OllamaResponse struct {
     Message struct {
         Content string `json:"content"`
     } `json:"message"`
-    Done bool `json:"done"`
+    Done            bool  `json:"done"`
+    EvalCount       int   `json:"eval_count"`
+    PromptEvalCount int   `json:"prompt_eval_count"`
 }
 
 type StreamChunk struct {
-    Text  string
-    Model string
-    Done  bool
-    Error error
+    Text         string
+    Done         bool
+    Error        error
+    TokenCount   int
+    PromptTokens int
+}
+
+type TokenStats struct {
+    TokenCount   int `json:"token_count"`
+    PromptTokens int `json:"prompt_tokens"`
 }
 

@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"io"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"go-project/models"
 	"github.com/gin-gonic/gin"
 )
@@ -23,31 +24,35 @@ func (h *ChatHandler) StreamGemini(c *gin.Context) {
 	messageChan, errorChan := h.chatService.StreamGemini(&request)
 
 	c.Stream(func(w io.Writer) bool {
-			select {
-			case msg, ok := <-messageChan:
-					if !ok {
-							select {
-							case err, ok := <-errorChan:
-									if ok && err != nil {
-											fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
-											return false
-									}
-							default:
-							}
-							fmt.Fprintf(w, "event: done\ndata: \n\n")
-							return false
-					}
-					fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
-					return true
-
-			case err, ok := <-errorChan:
+		select {
+		case msg, ok := <-messageChan:
+			if !ok {
+				select {
+				case err, ok := <-errorChan:
 					if ok && err != nil {
-							fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+						fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+						return false
 					}
-					return false
-
-			case <-c.Request.Context().Done():
-					return false
+				default:
+				}
+				fmt.Fprintf(w, "event: done\ndata: \n\n")
+				return false
 			}
+			if strings.HasPrefix(msg, "__token_stats__:") {
+				fmt.Fprintf(w, "event: token_stats\ndata: %s\n\n", strings.TrimPrefix(msg, "__token_stats__:"))
+				return true
+			}
+			fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
+			return true
+
+		case err, ok := <-errorChan:
+			if ok && err != nil {
+				fmt.Fprintf(w, "event: error\ndata: %s\n\n", err.Error())
+			}
+			return false
+
+		case <-c.Request.Context().Done():
+			return false
+		}
 	})
 }

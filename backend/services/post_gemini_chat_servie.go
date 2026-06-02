@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -38,9 +39,16 @@ func (s *chatService) StreamGemini(request *models.ChatRequest) (<-chan string, 
 			buffer += chunk.Text
 
 			if chunk.Done {
-				// flush entire remaining buffer at once when done
 				if buffer != "" {
 					messageChan <- buffer
+				}
+				if chunk.TokenCount > 0 {
+					if statsJSON, err := json.Marshal(models.TokenStats{
+						TokenCount:   chunk.TokenCount,
+						PromptTokens: chunk.PromptTokens,
+					}); err == nil {
+						messageChan <- "__token_stats__:" + string(statsJSON)
+					}
 				}
 				return
 			}

@@ -9,9 +9,50 @@ const cloudBar     = document.getElementById('cloudBar');
 const gptBtn       = document.getElementById('gptBtn');
 const geminiBtn    = document.getElementById('geminiBtn');
 
-let chatMode     = 'normal';
-let cloudProvider = 'openai'; // tracks which cloud provider is selected
+let chatMode      = 'normal';
+let cloudProvider = 'openai';
 let conversationHistory = [];
+
+const modeLabels = {
+    normal:    'Chat Local',
+    rag:       'RAG',
+    websearch: 'Web Search',
+    cloud:     'Cloud AI',
+};
+
+const modelLabels = {
+    normal:    'llama3.2:3b',
+    rag:       'llama3.2:3b',
+    websearch: 'llama3.2:3b',
+    openai:    'gpt-4.1-mini',
+    gemini:    'gemini-2.5-flash',
+};
+
+function updateStatusBar() {
+    const model = chatMode === 'cloud' ? modelLabels[cloudProvider] : (modelLabels[chatMode] || 'llama3.2:3b');
+    document.getElementById('modeIndicator').textContent  = 'Modo: ' + (modeLabels[chatMode] || 'Chat Local');
+    document.getElementById('modelIndicator').textContent = model;
+}
+
+function hideWelcome() {
+    const ws = document.getElementById('welcomeScreen');
+    if (ws) ws.style.display = 'none';
+}
+
+function showWelcome() {
+    messagesDiv.innerHTML = `
+        <div id="welcomeScreen">
+            <p id="welcomeTitle">Farol, como posso ajudar?</p>
+            <div id="suggestions">
+                <button class="suggestion-btn">O que é RAG?</button>
+                <button class="suggestion-btn">O que é um modelo de linguagem?</button>
+                <button class="suggestion-btn">Qual a diferença entre modelos locais e cloud?</button>
+                <button class="suggestion-btn">Como funciona a busca vetorial?</button>
+            </div>
+        </div>
+    `;
+    bindSuggestions();
+}
 
 input.addEventListener('input', function() {
     this.style.height = 'auto';
@@ -33,6 +74,7 @@ ragChatTab.addEventListener('click', () => {
         cloudTab.classList.remove('active');
         cloudBar.style.display = 'none';
     }
+    updateStatusBar();
 });
 
 webSearchTab.addEventListener('click', () => {
@@ -44,6 +86,7 @@ webSearchTab.addEventListener('click', () => {
         cloudTab.classList.remove('active');
         cloudBar.style.display = 'none';
     }
+    updateStatusBar();
 });
 
 cloudTab.addEventListener('click', () => {
@@ -58,24 +101,27 @@ cloudTab.addEventListener('click', () => {
         webSearchTab.classList.remove('active');
         cloudBar.style.display = 'flex';
     }
+    updateStatusBar();
 });
 
 gptBtn.addEventListener('click', () => {
     cloudProvider = 'openai';
     gptBtn.classList.add('active');
     geminiBtn.classList.remove('active');
+    updateStatusBar();
 });
 
 geminiBtn.addEventListener('click', () => {
     cloudProvider = 'gemini';
     geminiBtn.classList.add('active');
     gptBtn.classList.remove('active');
+    updateStatusBar();
 });
 
 document.getElementById('clearChatBtn').addEventListener('click', () => {
     if (confirm('Deseja realmente limpar toda a conversa?')) {
         conversationHistory = [];
-        messagesDiv.innerHTML = '';
+        showWelcome();
     }
 });
 
@@ -83,6 +129,8 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const message = input.value.trim();
     if (!message) return;
+
+    hideWelcome();
 
     const userMsg = document.createElement('div');
     userMsg.className = 'message user';
@@ -119,7 +167,6 @@ function escapeHtml(text) {
 }
 
 function buildEndpoint(message) {
-    // resolve cloud provider endpoint
     const cloudURL = cloudProvider === 'gemini' ? '/api/chat/gemini' : '/api/chat/openai';
     const endpoints = {
         rag:      { url: '/api/chat/rag',       body: { message, history: conversationHistory.slice(0, -1) } },
@@ -146,8 +193,20 @@ async function handleStreamingChat(message) {
     const sourcesSection = aiMsg.querySelector('.sources-section');
     const statsSpan      = aiMsg.querySelector('.streaming-stats');
 
-    let fullResponse = '', tokenCount = 0, startTime = Date.now(), firstTokenTime = null;
+    let fullResponse = '', wordCount = 0, startTime = Date.now(), firstTokenTime = null, realStats = null;
     const { url, body } = buildEndpoint(message);
+
+    const ctx = {
+        aiMsg, contentSpan, sourcesSection, statsSpan, startTime,
+        firstTokenTime:    () => firstTokenTime,
+        setFirstTokenTime: (t) => { firstTokenTime = t; },
+        wordCount:         () => wordCount,
+        incrementWord:     () => { wordCount++; },
+        fullResponse:      () => fullResponse,
+        appendResponse:    (chunk) => { fullResponse += chunk; },
+        getRealStats:      () => realStats,
+        setRealStats:      (s) => { realStats = s; },
+    };
 
     try {
         const res = await fetch(url, {
@@ -175,30 +234,14 @@ async function handleStreamingChat(message) {
                     if (line.startsWith('event:')) eventType = line.slice(6).trim();
                     else if (line.startsWith('data:')) { const d = line.slice(5); data += d.startsWith(' ') ? d.slice(1) : d; }
                 }
-                handleSSEEvent(eventType, data, {
-                    aiMsg, contentSpan, sourcesSection, statsSpan, startTime,
-                    firstTokenTime: () => firstTokenTime,
-                    setFirstTokenTime: (t) => { firstTokenTime = t; },
-                    tokenCount: () => tokenCount,
-                    incrementToken: () => { tokenCount++; },
-                    fullResponse: () => fullResponse,
-                    appendResponse: (chunk) => { fullResponse += chunk; },
-                });
+                handleSSEEvent(eventType, data, ctx);
             }
-        }
-
-        if (buffer.trim()) {
-            let data = '';
-            for (const line of buffer.split('\n')) {
-                if (line.startsWith('data:')) { const d = line.slice(5); data += d.startsWith(' ') ? d.slice(1) : d; }
-            }
-            if (data) { fullResponse += data; contentSpan.textContent = fullResponse; }
         }
 
         if (fullResponse && !conversationHistory.some(m => m.role === 'assistant' && m.content === fullResponse)) {
             conversationHistory.push({ role: 'assistant', content: fullResponse });
             if (aiMsg.className === 'message streaming') {
-                finalizeMessage(aiMsg, statsSpan, tokenCount, firstTokenTime, startTime, 'Stream completed');
+                finalizeMessage(aiMsg, statsSpan, ctx.wordCount(), firstTokenTime, startTime, 'Stream completed', ctx.getRealStats());
             }
         }
     } catch (error) {
@@ -212,42 +255,88 @@ function handleSSEEvent(eventType, data, ctx) {
 
     if (eventType === 'message' && data) {
         if (!ctx.firstTokenTime()) ctx.setFirstTokenTime(Date.now());
-        ctx.incrementToken();
+        ctx.incrementWord();
         ctx.appendResponse(data);
         contentSpan.textContent = ctx.fullResponse();
+
         const elapsed = (Date.now() - ctx.firstTokenTime()) / 1000;
-        const tokensPerSec = elapsed > 0 ? (ctx.tokenCount() / elapsed).toFixed(2) : '0.00';
+        const wordsPerSec = elapsed > 0 ? (ctx.wordCount() / elapsed).toFixed(1) : '0.0';
         const timeToFirst = ((ctx.firstTokenTime() - startTime) / 1000).toFixed(2);
-        statsSpan.innerHTML = `<span>${tokensPerSec} tok/sec</span><span>${ctx.tokenCount()} tokens</span><span>${timeToFirst}s to first token</span>`;
+        statsSpan.className = 'token-stats streaming-stats';
+        statsSpan.innerHTML = `
+            <span>~${wordsPerSec} palavras/s</span>
+            <span>~${ctx.wordCount()} palavras</span>
+            <span>${timeToFirst}s até 1ª resposta</span>
+            <span class="stat-label-approx">estimativa</span>
+        `;
         aiMsg.parentElement && (aiMsg.parentElement.scrollTop = aiMsg.parentElement.scrollHeight);
+
+    } else if (eventType === 'token_stats' && data) {
+        try {
+            const stats = JSON.parse(data);
+            ctx.setRealStats(stats);
+            const elapsed = ctx.firstTokenTime() ? (Date.now() - ctx.firstTokenTime()) / 1000 : 0;
+            const tokPerSec = elapsed > 0 ? (stats.token_count / elapsed).toFixed(1) : '—';
+            const timeToFirst = ctx.firstTokenTime() ? ((ctx.firstTokenTime() - startTime) / 1000).toFixed(2) : '—';
+            statsSpan.className = 'token-stats streaming-stats real-stats';
+            statsSpan.innerHTML = `
+                <span class="stat-confirmed">✓</span>
+                <span>${tokPerSec} tok/s</span>
+                <span>${stats.token_count} tokens gerados</span>
+                <span>${stats.prompt_tokens} tokens prompt</span>
+                <span>${timeToFirst}s até 1ª resposta</span>
+            `;
+        } catch (e) { console.error('Erro ao parsear token_stats:', e); }
 
     } else if (eventType === 'sources' && data) {
         try {
             const sources = JSON.parse(data);
             if (sources && sources.length > 0) {
-                let html = '<div class="sources-title">📚 Fontes:</div>';
+                let html = '<div class="sources-title">Fontes:</div>';
                 sources.forEach((s, i) => {
                     html += `<div class="source-item"><strong>[${i+1}]</strong> <a href="${escapeHtml(s.url)}" target="_blank">${escapeHtml(s.title || s.url)}</a></div>`;
                 });
                 sourcesSection.innerHTML = html;
                 sourcesSection.style.display = 'block';
             }
-        } catch (e) { console.error('Error parsing sources:', e); }
+        } catch (e) {}
 
     } else if (eventType === 'done') {
         conversationHistory.push({ role: 'assistant', content: ctx.fullResponse() });
-        finalizeMessage(aiMsg, statsSpan, ctx.tokenCount(), ctx.firstTokenTime(), startTime, 'EOS Token Found');
+        finalizeMessage(ctx.aiMsg, statsSpan, ctx.wordCount(), ctx.firstTokenTime(), startTime, 'EOS Token Found', ctx.getRealStats());
 
     } else if (eventType === 'error') {
         throw new Error('Streaming error received from server');
     }
 }
 
-function finalizeMessage(aiMsg, statsSpan, tokenCount, firstTokenTime, startTime, stopReason) {
-    const avgSpeed    = firstTokenTime ? (tokenCount / ((Date.now() - firstTokenTime) / 1000)).toFixed(2) : '0.00';
-    const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '0.00';
+function finalizeMessage(aiMsg, statsSpan, wordCount, firstTokenTime, startTime, stopReason, realStats) {
     aiMsg.className = 'message assistant';
-    statsSpan.innerHTML = `<span>${avgSpeed} tok/sec</span><span>${tokenCount} tokens</span><span>${timeToFirst}s to first token</span><span>Stop: ${stopReason}</span>`;
+    const timeToFirst = firstTokenTime ? ((firstTokenTime - startTime) / 1000).toFixed(2) : '—';
+
+    if (realStats) {
+        const elapsed = firstTokenTime ? (Date.now() - firstTokenTime) / 1000 : 0;
+        const tokPerSec = elapsed > 0 ? (realStats.token_count / elapsed).toFixed(1) : '—';
+        statsSpan.className = 'token-stats real-stats';
+        statsSpan.innerHTML = `
+            <span class="stat-confirmed">✓ dados reais</span>
+            <span>${tokPerSec} tok/s</span>
+            <span>${realStats.token_count} tokens gerados</span>
+            <span>${realStats.prompt_tokens} tokens prompt</span>
+            <span>${timeToFirst}s até 1ª resposta</span>
+            <span>Parada: ${stopReason}</span>
+        `;
+    } else {
+        const avgSpeed = firstTokenTime ? (wordCount / ((Date.now() - firstTokenTime) / 1000)).toFixed(1) : '0.0';
+        statsSpan.className = 'token-stats';
+        statsSpan.innerHTML = `
+            <span>~${avgSpeed} palavras/s</span>
+            <span>~${wordCount} palavras</span>
+            <span>${timeToFirst}s até 1ª resposta</span>
+            <span class="stat-label-approx">estimativa</span>
+            <span>Parada: ${stopReason}</span>
+        `;
+    }
 }
 
 document.getElementById('openUpload').onclick = () => { document.getElementById('uploadBox').style.display = 'block'; };
@@ -274,4 +363,16 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
 document.getElementById('helpBtn').onclick   = () => { document.getElementById('helpBox').style.display = 'block'; };
 document.getElementById('closeHelp').onclick = () => { document.getElementById('helpBox').style.display = 'none'; };
 
+function bindSuggestions() {
+    document.querySelectorAll('.suggestion-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            input.value = btn.textContent;
+            input.dispatchEvent(new Event('input'));
+            sendBtn.click();
+        });
+    });
+}
+
+bindSuggestions();
+updateStatusBar();
 input.focus();

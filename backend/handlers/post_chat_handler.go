@@ -3,6 +3,7 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"strings"
 	"go-project/models"
 	"github.com/gin-gonic/gin"
 )
@@ -39,6 +40,10 @@ func (h *ChatHandler) StreamChat(c *gin.Context) {
 				c.SSEvent("done", "")
 				return false
 			}
+			if strings.HasPrefix(msg, "__token_stats__:") {
+				c.SSEvent("token_stats", strings.TrimPrefix(msg, "__token_stats__:"))
+				return true
+			}
 			c.SSEvent("message", msg)
 			return true
 
@@ -53,4 +58,3 @@ func (h *ChatHandler) StreamChat(c *gin.Context) {
 		}
 	})
 }
-
