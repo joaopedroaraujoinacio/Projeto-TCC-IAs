@@ -14,7 +14,7 @@ func (r *chatRepository) SendToLLM(request *models.ChatRequest) (<-chan models.S
 		fmt.Printf("Ollama URL: %s\n", r.ollamaURL)
     model := request.Model
     if model == "" {
-				model = r.ollamaDefaultModel 
+				model = "llama3.2:3b"
     }
 
     messages := []map[string]string{}
