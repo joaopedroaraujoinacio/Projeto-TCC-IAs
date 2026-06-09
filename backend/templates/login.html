@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAROL — Login</title>
+    <link rel="icon" href="/static/images/fi.png" type="image/png">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body { justify-content: center; align-items: center; }
+        .auth-box {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 18px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .auth-box img   { width: 90px; margin: 0 auto 4px; display: block; }
+        .auth-box h2    { font-family: var(--mono); color: var(--accent); font-size: 13px; text-align: center; letter-spacing: 0.1em; }
+        .auth-box input {
+            width: 100%; padding: 11px 15px;
+            border-radius: 10px; border: 1px solid var(--border2);
+            background: var(--bg); color: var(--text);
+            font-size: 14px; font-family: var(--sans);
+        }
+        .auth-box input:focus  { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .auth-box input::placeholder { color: var(--text-muted); }
+        .auth-box button       { width: 100%; height: 44px; font-size: 14px; border-radius: 12px; }
+        .auth-switch           { text-align: center; font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+        .auth-switch a         { color: var(--accent); text-decoration: none; }
+        .auth-switch a:hover   { text-decoration: underline; }
+        .auth-error            { color: var(--error); font-size: 12px; font-family: var(--mono); text-align: center; min-height: 16px; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <img src="/static/images/farol.png" alt="FAROL">
+        <h2>LOGIN</h2>
+        <p class="auth-error" id="errorMsg"></p>
+        <input type="email"    id="email"    placeholder="Email"    autocomplete="email">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        <button id="loginBtn">Entrar</button>
+        <p class="auth-switch">Não tem conta? <a href="/signup">Criar conta</a></p>
+    </div>
+    <script>
+        async function doLogin() {
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = '';
+
+            if (!email || !password) {
+                errorMsg.textContent = 'Preencha todos os campos.';
+                return;
+            }
+            try {
+                const res  = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = await res.json();
+                if (!res.ok) { errorMsg.textContent = data.message || 'Erro ao fazer login.'; return; }
+                localStorage.setItem('token', data.token);
+                window.location.href = '/chat';
+            } catch {
+                errorMsg.textContent = 'Erro de conexão.';
+            }
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', doLogin);
+        document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    </script>
+</body>
+</html>

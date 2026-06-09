@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,42 +9,51 @@
 </head>
 <body>
     <button id="clearChatBtn">Limpar conversa</button>
+    <button id="logoutBtn">Sair</button>
     <button id="helpBtn">?</button>
-
     <h1>
         <img src="/static/images/farol.png" alt="FAROL Logo" style="width:120px;">
     </h1>
-
     <div class="tabs-container">
         <button class="tab-btn" id="ragChatTab">RAG</button>
         <button class="tab-btn" id="webSearchTab">Web Search</button>
         <button class="tab-btn" id="cloudTab">☁ Cloud AI</button>
     </div>
-
     <div id="cloudBar">
-        <button class="cloud-btn active" id="gptBtn">GPT</button>
+        <button class="cloud-btn active" id="gptBtn">GPT-4.1 Mini</button>
         <button class="cloud-btn" id="geminiBtn">Gemini 2.5 Flash</button>
     </div>
-
-    <div id="messages"></div>
-
+    <div id="messages">
+        <div id="welcomeScreen">
+            <p id="welcomeTitle">Farol, como posso ajudar?</p>
+            <div id="suggestions">
+                <button class="suggestion-btn">O que é RAG?</button>
+                <button class="suggestion-btn">O que é um modelo de linguagem?</button>
+                <button class="suggestion-btn">Qual a diferença entre modelos locais e cloud?</button>
+                <button class="suggestion-btn">Como funciona a busca vetorial?</button>
+            </div>
+        </div>
+    </div>
     <form id="chatForm">
         <textarea id="messageInput" placeholder="Escreva sua mensagem..." rows="1"></textarea>
         <button type="submit" id="sendBtn">Enviar</button>
         <button type="button" id="openUpload" class="icon">Anexar</button>
     </form>
-
+    <div id="statusBar">
+        <span id="modeIndicator">Modo: Chat Local</span>
+        <span class="status-divider">·</span>
+        <span id="modelIndicator">llama3.2:3b</span>
+    </div>
     <div id="uploadBox">
         <h3>Enviar Arquivo</h3>
         <form id="uploadForm">
-            <input type="file" id="fileInput" required>
+            <input type="file" id="fileInput" accept=".txt,.md,.csv" required>
             <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
                 <button type="submit">Enviar</button>
                 <button type="button" id="cancelUpload" style="background: #666;">Cancelar</button>
             </div>
         </form>
     </div>
-
     <div id="helpBox">
         <h2>SOBRE</h2>
         <p>O chat FAROL permite conversar com uma IA capaz de responder perguntas e analisar contextos.</p>
@@ -53,11 +62,14 @@
             <li>Use o <strong>Chat Normal</strong> (padrão) para perguntas gerais.</li>
             <li>Use o <strong>RAG</strong> para consultar documentos enviados.</li>
             <li>Use o <strong>Web Search</strong> para buscar informações na internet.</li>
-            <li>Use o <strong>Cloud AI</strong> para usar GPT ou Gemini.</li>
+            <li>Use o <strong>Cloud AI</strong> para usar GPT-4.1 Mini ou Gemini.</li>
         </ul>
         <button id="closeHelp">X</button>
     </div>
-
+    <script>
+        // guard — redirect to login if no token
+        if (!localStorage.getItem('token')) window.location.href = '/login';
+    </script>
     <script src="/static/chat.js"></script>
 </body>
 </html>
