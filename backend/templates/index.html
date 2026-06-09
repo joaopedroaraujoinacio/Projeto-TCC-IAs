@@ -8,68 +8,70 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <button id="clearChatBtn">Limpar conversa</button>
-    <button id="logoutBtn">Sair</button>
-    <button id="helpBtn">?</button>
-    <h1>
-        <img src="/static/images/farol.png" alt="FAROL Logo" style="width:120px;">
-    </h1>
+    <header id="appHeader">
+        <div id="headerLeft">
+            <img src="/static/images/farol.png" alt="FAROL" id="headerLogo">
+        </div>
+        <div id="headerRight">
+            <span id="headerUser"></span>
+            <button id="logoutBtn"  class="header-btn" style="display:none">Sair</button>
+            <button id="loginBtn"   class="header-btn" style="display:none" onclick="window.location.href='/login'">Entrar</button>
+            <button id="signupBtn"  class="header-btn accent" style="display:none" onclick="window.location.href='/signup'">Criar conta</button>
+            <button id="clearChatBtn" class="header-btn danger">Limpar</button>
+            <button id="helpBtn"    class="header-btn icon">?</button>
+        </div>
+    </header>
+
     <div class="tabs-container">
-        <button class="tab-btn" id="ragChatTab">RAG</button>
-        <button class="tab-btn" id="webSearchTab">Web Search</button>
-        <button class="tab-btn" id="cloudTab">☁ Cloud AI</button>
+        <button class="tab-btn" id="normalTab">💬 Chat</button>
+        <button class="tab-btn" id="webSearchTab">🌐 Web Search</button>
+        <button class="tab-btn" id="ragChatTab">📚 RAG <span class="tab-badge">conta</span></button>
+        <button class="tab-btn" id="cloudTab">☁ Cloud AI <span class="tab-badge">conta</span></button>
     </div>
+
     <div id="cloudBar">
         <button class="cloud-btn active" id="gptBtn">GPT-4.1 Mini</button>
         <button class="cloud-btn" id="geminiBtn">Gemini 2.5 Flash</button>
     </div>
-    <div id="messages">
-        <div id="welcomeScreen">
-            <p id="welcomeTitle">Farol, como posso ajudar?</p>
-            <div id="suggestions">
-                <button class="suggestion-btn">O que é RAG?</button>
-                <button class="suggestion-btn">O que é um modelo de linguagem?</button>
-                <button class="suggestion-btn">Qual a diferença entre modelos locais e cloud?</button>
-                <button class="suggestion-btn">Como funciona a busca vetorial?</button>
-            </div>
-        </div>
-    </div>
+
+    <div id="messages"></div>
+
     <form id="chatForm">
         <textarea id="messageInput" placeholder="Escreva sua mensagem..." rows="1"></textarea>
         <button type="submit" id="sendBtn">Enviar</button>
-        <button type="button" id="openUpload" class="icon">Anexar</button>
+        <button type="button" id="openUpload" class="icon" title="Anexar arquivo ao RAG">📎</button>
     </form>
+
     <div id="statusBar">
         <span id="modeIndicator">Modo: Chat Local</span>
         <span class="status-divider">·</span>
         <span id="modelIndicator">llama3.2:3b</span>
     </div>
+
     <div id="uploadBox">
-        <h3>Enviar Arquivo</h3>
+        <h3>Enviar para RAG</h3>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">O conteúdo será indexado e ficará disponível no modo RAG.</p>
         <form id="uploadForm">
             <input type="file" id="fileInput" accept=".txt,.md,.csv" required>
-            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+            <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;">
                 <button type="submit">Enviar</button>
-                <button type="button" id="cancelUpload" style="background: #666;">Cancelar</button>
+                <button type="button" id="cancelUpload" class="icon">Cancelar</button>
             </div>
         </form>
     </div>
+
     <div id="helpBox">
         <h2>SOBRE</h2>
-        <p>O chat FAROL permite conversar com uma IA capaz de responder perguntas e analisar contextos.</p>
-        <p>Construído para operar de forma totalmente local, o sistema garante a privacidade e a autonomia no processamento de informações.</p>
+        <p>Chat com IA totalmente local — sem envio de dados para servidores externos.</p>
         <ul>
-            <li>Use o <strong>Chat Normal</strong> (padrão) para perguntas gerais.</li>
-            <li>Use o <strong>RAG</strong> para consultar documentos enviados.</li>
-            <li>Use o <strong>Web Search</strong> para buscar informações na internet.</li>
-            <li>Use o <strong>Cloud AI</strong> para usar GPT-4.1 Mini ou Gemini.</li>
+            <li><strong>Chat</strong> — conversa geral, sem conta.</li>
+            <li><strong>Web Search</strong> — busca na internet, sem conta.</li>
+            <li><strong>RAG</strong> — consulta documentos seus. Requer conta.</li>
+            <li><strong>Cloud AI</strong> — GPT ou Gemini. Requer conta.</li>
         </ul>
-        <button id="closeHelp">X</button>
+        <button id="closeHelp">Fechar</button>
     </div>
-    <script>
-        // guard — redirect to login if no token
-        if (!localStorage.getItem('token')) window.location.href = '/login';
-    </script>
+
     <script src="/static/chat.js"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ func SetupRoutes(server *gin.Engine, deps *Dependencies) {
 	api := server.Group("/api") 
 	{
 		api.POST("/auth/signup", deps.UserHandler.Signup)
-		api.POST("auth/login", deps.UserHandler.Login)
+		api.POST("/auth/login", deps.UserHandler.Login)
 
 		api.POST("/chat", deps.ChatHandler.StreamChat)
 		api.POST("/chat/web-search", deps.ChatHandler.WebSearchChat)
