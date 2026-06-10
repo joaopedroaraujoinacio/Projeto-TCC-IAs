@@ -411,3 +411,55 @@ button.icon:hover { background: var(--border2); color: var(--text); box-shadow: 
     #statusBar { font-size: 10px; }
     .suggestion-btn { font-size: 12px; padding: 8px 14px; }
 }
+
+/* ── upload box ──────────────────────────────────────── */
+#uploadBox {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--surface); padding: 28px;
+    border: 1px solid var(--border2); border-radius: 18px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    z-index: 1000; width: 400px; max-width: 92vw;
+    text-align: center;
+}
+#uploadBox h3 {
+    font-family: var(--mono); color: var(--accent);
+    font-size: 13px; letter-spacing: 0.08em; margin-bottom: 6px;
+}
+.upload-hint {
+    font-size: 11px; color: var(--text-muted);
+    font-family: var(--mono); margin-bottom: 16px;
+}
+#fileDropZone {
+    border: 2px dashed var(--border2);
+    border-radius: 12px; padding: 32px 20px;
+    cursor: pointer; transition: all 0.2s;
+    position: relative; background: var(--bg);
+}
+#fileDropZone:hover        { border-color: var(--accent); background: rgba(255,222,33,0.03); }
+#fileDropZone.drag-over    { border-color: var(--accent); background: rgba(255,222,33,0.06); box-shadow: 0 0 0 3px var(--accent-glow); }
+#fileDropZone.has-file     { border-color: var(--green); background: rgba(16,163,127,0.04); }
+#fileDropLabel {
+    font-size: 13px; color: var(--text-muted);
+    pointer-events: none; display: block;
+}
+#fileDropZone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+#selectedFileName {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--green); margin-top: 10px; min-height: 18px;
+}
+.upload-actions {
+    display: flex; gap: 10px;
+    justify-content: flex-end; margin-top: 18px;
+}
+.upload-actions button[type="submit"] {
+    height: 38px; padding: 0 20px;
+    font-size: 13px; border-radius: 10px;
+}
+.upload-actions .icon {
+    height: 38px; padding: 0 16px;
+    font-size: 13px; border-radius: 10px;
+}

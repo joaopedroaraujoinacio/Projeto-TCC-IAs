@@ -358,37 +358,96 @@ function finalizeMessage(aiMsg, statsSpan, wordCount, firstTokenTime, startTime,
 }
 
 // ── upload ──────────────────────────────────────────────────────
-document.getElementById('openUpload').onclick  = () => {
+document.getElementById('openUpload').onclick = () => {
     if (!isLoggedIn()) { requireAuthPrompt('rag'); return; }
     document.getElementById('uploadBox').style.display = 'block';
 };
+
 document.getElementById('cancelUpload').onclick = () => {
     document.getElementById('uploadBox').style.display = 'none';
     document.getElementById('uploadForm').reset();
+    document.getElementById('selectedFileName').textContent = '';
+    document.getElementById('fileDropZone').classList.remove('has-file');
 };
+
+document.getElementById('fileInput').addEventListener('change', function() {
+    const label = document.getElementById('selectedFileName');
+    const zone  = document.getElementById('fileDropZone');
+    if (this.files[0]) {
+        label.textContent = '📄 ' + this.files[0].name;
+        zone.classList.add('has-file');
+    } else {
+        label.textContent = '';
+        zone.classList.remove('has-file');
+    }
+});
+
+const dropZone = document.getElementById('fileDropZone');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        document.getElementById('selectedFileName').textContent = '📄 ' + file.name;
+        dropZone.classList.add('has-file');
+    }
+});
 
 document.getElementById('uploadForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const file = document.getElementById('fileInput').files[0];
-    if (!file) return;
-    const text = await file.text();
+    const file      = document.getElementById('fileInput').files[0];
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+    if (!file) { alert('Selecione um arquivo.'); return; }
+
+    const allowed = ['.txt', '.md', '.csv', '.pdf'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) {
+        alert('Formato não suportado. Use: PDF, TXT, MD ou CSV.');
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Indexando...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers = {};
+    const t = getToken();
+    if (t) headers['Authorization'] = 'Bearer ' + t;
+
     try {
         const res = await fetch('/api/rag/add_rag_data', {
             method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ content: text, content_name: file.name }),
+            headers,       
+            body: formData,
         });
         if (handleUnauthorized(res)) return;
-        if (!res.ok) throw new Error('Upload falhou: ' + res.status);
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Upload falhou');
+        }
+
         hideWelcome();
         const msg = document.createElement('div');
         msg.className = 'message assistant';
-        msg.innerHTML = `<div>✓ "<strong>${escapeHtml(file.name)}</strong>" indexado com sucesso no RAG.</div>`;
+        msg.innerHTML = `<div>✓ "<strong>${escapeHtml(file.name)}</strong>" indexado no RAG com sucesso.</div>`;
         messagesDiv.appendChild(msg);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
         document.getElementById('uploadBox').style.display = 'none';
-        e.target.reset();
-    } catch (err) { alert('Erro: ' + err.message); }
+        document.getElementById('uploadForm').reset();
+        document.getElementById('selectedFileName').textContent = '';
+        document.getElementById('fileDropZone').classList.remove('has-file');
+    } catch (err) {
+        alert('Erro: ' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Indexar';
+    }
 });
 
 // ── help ────────────────────────────────────────────────────────

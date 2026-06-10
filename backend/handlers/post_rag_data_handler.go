@@ -1,9 +1,14 @@
 package handlers
 
 import (
-	"net/http"
-	"strconv"
 	"go-project/models"
+	"go-project/utils"
+	"io"
+	"net/http"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,18 +31,65 @@ func (h *RagHandler) CreateRagData(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var data models.RagData
-	if err := c.ShouldBindJSON(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
 		return
 	}
+
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowed := map[string]bool{
+		".txt": true,
+		",md": true,
+		".csv": true,
+		".pdf": true,
+	}
+	if !allowed[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsuported file type."})
+		return
+	}
+
+	var content string
+
+	if ext == ".pdf" {
+		content, err = utils.ExtractPDFText(file, header.Size)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
+			return
+		}
+
+	} else {
+		raw, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read file"})
+			return
+		}
+		content = string(raw)
+	}
+
+	content = strings.TrimSpace(content)
+	if content == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file appears to be empty"})
+		return
+	}
+
+	data := models.RagData{
+		Content: content,
+		ContentName: header.Filename,
+	}
+
 	if err := h.svc.CreateDataEmbedding(userID, &data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create document"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to index document"})
 		return
 	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message":       "embedded data created successfully",
-		"embedded_data": data,
+		"message": 			"document indexed successfully",
+		"content_name": data.ContentName,
+		"id": 					data.ID,
 	})
 }
 
@@ -76,3 +128,4 @@ func (h *RagHandler) GetAllRagData(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"data": results})
 }
+
