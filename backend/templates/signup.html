@@ -71,8 +71,10 @@
                 });
                 const data = await res.json();
                 if (!res.ok) { errorMsg.textContent = data.message || 'Erro ao criar conta.'; return; }
-                successMsg.textContent = 'Conta criada! Redirecionando...';
-                setTimeout(() => window.location.href = '/login', 1500);
+
+                localStorage.setItem('token', data.token);
+                window.location.href = '/chat';
+
             } catch {
                 errorMsg.textContent = 'Erro de conexão.';
             }

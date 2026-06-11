@@ -21,7 +21,21 @@ func (h *UserHandler) Signup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not create user"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "user created successfully"})
+
+	token, err := utils.GenerateToken(user.Email, user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not generate token"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "user created successfully",
+		"token": token,
+		"user": gin.H{
+			"id": user.ID,
+			"email": user.Email,
+			"role": user.Role,
+		},
+	})
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
