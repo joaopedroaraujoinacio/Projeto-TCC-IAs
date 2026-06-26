@@ -38,4 +38,3 @@ func SetupRoutes(server *gin.Engine, deps *Dependencies) {
 		server.StaticFile("/login", "./templates/login.html")
 		server.StaticFile("/signup", "./templates/signup.html")
 }
-
