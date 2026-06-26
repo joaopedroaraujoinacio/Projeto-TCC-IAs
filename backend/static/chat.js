@@ -469,4 +469,12 @@ refreshHeaderAuth();
 setTab('normal');
 showWelcome();
 updateStatusBar();
+window.addEventListener('beforeunload', (e) => {
+  if (conversationHistory. length === 0) return;
+  e.preventDefault();
+  e.preventDefault() = '';
+});
+window.addEventListener('unload', () => {
+  conversationHistory = [];
+});
 input.focus();
